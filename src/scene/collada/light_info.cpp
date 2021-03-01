@@ -8,7 +8,7 @@ LightInfo::LightInfo() {
 
   light_type = LightType::NONE;
 
-  spectrum = Spectrum(1,1,1);
+  spectrum = Vector3D(1,1,1);
 
   position  = Vector3D(0, 0,  0);  // COLLADA default
   direction = Vector3D(0, 0, -1);  // COLLADA default

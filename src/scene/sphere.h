@@ -20,8 +20,10 @@ class Sphere : public Primitive {
    * Parameterized Constructor.
    * Construct a sphere with given origin & radius.
    */
-  Sphere(const SphereObject* object, const Vector3D& o, double r)
+  Sphere(const SphereObject* object, const Vector3D o, double r)
     : object(object), o(o), r(r), r2(r*r) { }
+
+  Sphere() {}
 
   /**
    * Get the world space bounding box of the sphere.
@@ -81,8 +83,6 @@ class Sphere : public Primitive {
   * Draw outline with OpenGL (for visualizer)
   */
   void drawOutline(const Color& c, float alpha) const;
-
- private:
 
   /**
    * Tests for ray-sphere intersection, returning true if there are

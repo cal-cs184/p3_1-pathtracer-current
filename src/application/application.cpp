@@ -32,19 +32,28 @@ Application::Application(AppConfig config, bool gl) {
     config.pathtracer_max_tolerance,
     config.pathtracer_envmap,
     config.pathtracer_direct_hemisphere_sample,
-    config.pathtracer_filename
+    config.pathtracer_filename,
+    config.pathtracer_lensRadius,
+    config.pathtracer_focalDistance
   );
   filename = config.pathtracer_filename;
 }
 
 Application::~Application() {
 
+  delete debugger;
+
   delete renderer;
 
 }
 
+void visual_debugger(GLScene::Scene** parent_scene, Application::Mode* current_mode);
+
 void Application::init() {
   if (gl_window) {
+
+    debugger = new VisualDebugger(&this->scene, (int*)&this->mode);
+
     textManager.init(use_hdpi);
     text_color = Color(1.0, 1.0, 1.0);
 
@@ -148,6 +157,8 @@ void Application::render() {
       renderer->update_screen();
       break;
   }
+
+  debugger->render();
 }
 
 void Application::update_gl_camera() {
@@ -432,6 +443,9 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
           case '.': case '>':
           case ',': case '<':
           case 'h': case 'H':
+          case 'k': case 'K':
+          case 'l': case 'L':
+          case ';': case '\'':
             renderer->stop();
             renderer->key_press(key);
             renderer->start_raytracing();
@@ -555,6 +569,11 @@ void Application::mouse_released(e_mouse_button b) {
       }
       break;
     case RIGHT:
+      if (mode == RENDER_MODE) {
+        renderer->autofocus(Vector2D(mouseX, screenH - mouseY));
+        renderer->stop();
+        renderer->start_raytracing();
+      }
       rightDown = false;
       break;
     case MIDDLE:

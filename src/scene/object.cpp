@@ -63,7 +63,7 @@ BSDF* Mesh::get_bsdf() const {
 
 // Sphere object //
 
-SphereObject::SphereObject(const Vector3D& o, double r, BSDF* bsdf) {
+SphereObject::SphereObject(const Vector3D o, double r, BSDF* bsdf) {
 
   this->o = o;
   this->r = r;

@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "CGL/vector3D.h"
-#include "CGL/spectrum.h"
 #include "CGL/misc.h"
 
 #include "pathtracer/bsdf.h"

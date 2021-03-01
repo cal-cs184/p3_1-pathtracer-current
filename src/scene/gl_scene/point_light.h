@@ -4,6 +4,8 @@
 #include "scene.h"
 #include "scene/light.h"
 
+#include "application/visual_debugger.h"
+
 using std::cout;
 using std::endl;
 
@@ -25,9 +27,18 @@ class PointLight : public SceneLight {
     return l;
   }
 
+  void render_debugger_node() {
+    if (ImGui::TreeNode(this, "Point Light 0x%x", this))
+    {
+      DragDouble3("Radiance", &spectrum[0], 0.005);
+      DragDouble3("Position", &position[0], 0.005);
+      ImGui::TreePop();
+    }
+  }
+
  private:
 
-  Spectrum spectrum;
+  Vector3D spectrum;
   Vector3D position;
 
 };

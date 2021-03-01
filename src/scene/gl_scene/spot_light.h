@@ -4,6 +4,8 @@
 #include "scene.h"
 #include "scene/light.h"
 
+#include "application/visual_debugger.h"
+
 namespace CGL { namespace GLScene {
 
 class SpotLight : public SceneLight {
@@ -24,9 +26,19 @@ class SpotLight : public SceneLight {
     return l;
   }
 
+  void render_debugger_node() {
+    if (ImGui::TreeNode(this, "Spot Light 0x%x", this))
+    {
+      DragDouble3("Radiance", &spectrum[0], 0.005);
+      DragDouble3("Position", &position[0], 0.005);
+      DragDouble3("Direction", &direction[0], 0.005);
+      ImGui::TreePop();
+    }
+  }
+
  private:
 
-  Spectrum spectrum;
+  Vector3D spectrum;
   Vector3D direction;
   Vector3D position;
 

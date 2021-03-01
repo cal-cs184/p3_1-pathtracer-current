@@ -8,6 +8,8 @@
 
 #include "pathtracer/bsdf.h"
 
+#include "application/visual_debugger.h"
+
 using std::ostringstream;
 
 namespace CGL { namespace GLScene {
@@ -36,7 +38,7 @@ Mesh::Mesh(Collada::PolymeshInfo& polyMesh, const Matrix4x4& transform) {
   if (polyMesh.material) {
     bsdf = polyMesh.material->bsdf;
   } else {
-    bsdf = new DiffuseBSDF(Spectrum(0.5f,0.5f,0.5f));
+    bsdf = new DiffuseBSDF(Vector3D(0.5f,0.5f,0.5f));
   }
 }
 
@@ -61,6 +63,24 @@ void Mesh::render_in_opengl() const {
   draw_feature_if_needed(&hoveredFeature);
   draw_feature_if_needed(&selectedFeature);
   glEnable(GL_LIGHTING);
+}
+
+void Mesh::render_debugger_node()
+{
+  if (ImGui::TreeNode(this, "Mesh 0x%x", this))
+  {
+    if (ImGui::TreeNode(this, "Vertices"))
+    {
+      for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+        DragDouble3("Vertex", &v->position.x, 0.005);
+      }
+      ImGui::TreePop();
+    }
+
+    if (bsdf) bsdf->render_debugger_node();
+
+    ImGui::TreePop();
+  }
 }
 
 void Mesh::draw_faces() const {
@@ -140,24 +160,24 @@ void Mesh::draw_vertex(const Vertex *v) const {
 void Mesh::draw_halfedge_arrow(const Halfedge *h) const {
   get_draw_style(h)->style_halfedge();
 
-  const Vector3D& p0 = h->vertex()->position;
-  const Vector3D& p1 = h->next()->vertex()->position;
-  const Vector3D& p2 = h->next()->next()->vertex()->position;
+  const Vector3D p0 = h->vertex()->position;
+  const Vector3D p1 = h->next()->vertex()->position;
+  const Vector3D p2 = h->next()->next()->vertex()->position;
 
-  const Vector3D& e01 = p1-p0;
-  const Vector3D& e12 = p2-p1;
-  const Vector3D& e20 = p0-p2;
+  const Vector3D e01 = p1-p0;
+  const Vector3D e12 = p2-p1;
+  const Vector3D e20 = p0-p2;
 
-  const Vector3D& u = (e01 - e20) / 2;
-  const Vector3D& v = (e12 - e01) / 2;
+  const Vector3D u = (e01 - e20) / 2;
+  const Vector3D v = (e12 - e01) / 2;
 
-  const Vector3D& a = p0 + u / 5;
-  const Vector3D& b = p1 + v / 5;
+  const Vector3D a = p0 + u / 5;
+  const Vector3D b = p1 + v / 5;
 
-  const Vector3D& s = (b-a) / 5;
-  const Vector3D& t = cross(h->face()->normal(), s);
+  const Vector3D s = (b-a) / 5;
+  const Vector3D t = cross(h->face()->normal(), s);
   double theta = PI * 5 / 6;
-  const Vector3D& c = b + cos(theta) * s + sin(theta) * t;
+  const Vector3D c = b + cos(theta) * s + sin(theta) * t;
 
   glBegin(GL_LINE_STRIP);
   glVertex3dv(&a.x);

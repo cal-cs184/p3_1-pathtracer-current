@@ -58,6 +58,7 @@ BVHNode *BVHAccel::construct_bvh(std::vector<Primitive *>::iterator start,
   // single leaf node (which is also the root) that encloses all the
   // primitives.
 
+
   BBox bbox;
 
   for (auto p = start; p != end; p++) {
@@ -70,6 +71,8 @@ BVHNode *BVHAccel::construct_bvh(std::vector<Primitive *>::iterator start,
   node->end = end;
 
   return node;
+
+
 }
 
 bool BVHAccel::has_intersection(const Ray &ray, BVHNode *node) const {
@@ -79,24 +82,32 @@ bool BVHAccel::has_intersection(const Ray &ray, BVHNode *node) const {
   // Intersection version cannot, since it returns as soon as it finds
   // a hit, it doesn't actually have to find the closest hit.
 
+
+
   for (auto p : primitives) {
     total_isects++;
     if (p->has_intersection(ray))
       return true;
   }
   return false;
+
+
 }
 
 bool BVHAccel::intersect(const Ray &ray, Intersection *i, BVHNode *node) const {
   // TODO (Part 2.3):
   // Fill in the intersect function.
 
+
+
   bool hit = false;
   for (auto p : primitives) {
     total_isects++;
     hit = p->intersect(ray, i) || hit;
   }
-  return hit; 
+  return hit;
+
+
 }
 
 } // namespace SceneObjects

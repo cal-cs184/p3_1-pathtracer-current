@@ -31,18 +31,20 @@ struct SelectionInfo {
  * specially.
  */
 class SceneObject {
- public:
+public:
 
   /**
    * Passes in logic for how to render the object in openGL.
    */
-  virtual void set_draw_styles(DrawStyle *defaultStyle, DrawStyle *hoveredStyle,
-                               DrawStyle *selectedStyle) = 0;
+  virtual void set_draw_styles(DrawStyle* defaultStyle, DrawStyle* hoveredStyle,
+    DrawStyle* selectedStyle) = 0;
   /**
    * Renders the object in openGl, assuming that the camera and projection
    * matrices have already been set up.
    */
   virtual void render_in_opengl() const = 0;
+
+  virtual void render_debugger_node() { };
 
   /**
    * Given a transformation matrix from local to space to world space, returns
@@ -128,6 +130,8 @@ class SceneObject {
 class SceneLight {
  public:
   virtual SceneObjects::SceneLight *get_static_light() const = 0;
+
+  virtual void render_debugger_node() { };
 };
 
 /**
@@ -153,6 +157,8 @@ class Scene {
    * transformations have been applied elsewhere.
    */
   void render_in_opengl();
+
+  void render_debugger_node();
 
   /**
    * Gets a bounding box for the entire scene in world space coordinates.
@@ -215,10 +221,11 @@ class Scene {
    */
   SceneObjects::Scene *get_static_scene();
 
+  std::vector<SceneObject*> objects;
+  std::vector<SceneLight*> lights;
+
  private:
   SelectionInfo selectionInfo;
-  std::vector<SceneObject *> objects;
-  std::vector<SceneLight *> lights;
   int selectionIdx, hoverIdx;
 
   /**

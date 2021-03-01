@@ -46,6 +46,8 @@ class Mesh : public SceneObject, public MeshView {
                        DrawStyle *selectedStyle);
   void render_in_opengl() const;
 
+  void render_debugger_node();
+
   BBox get_bbox();
 
   double test_selection(const Vector2D& p, const Matrix4x4& worldTo3DH,

@@ -2,7 +2,6 @@
 #define CGL_STATICSCENE_BSDF_H
 
 #include "CGL/CGL.h"
-#include "CGL/spectrum.h"
 #include "CGL/vector3D.h"
 #include "CGL/matrix3x3.h"
 
@@ -19,35 +18,35 @@ inline double clamp (double n, double lower, double upper) {
   return std::max(lower, std::min(n, upper));
 }
 
-inline double cos_theta(const Vector3D& w) {
+inline double cos_theta(const Vector3D w) {
   return w.z;
 }
 
-inline double abs_cos_theta(const Vector3D& w) {
+inline double abs_cos_theta(const Vector3D w) {
   return fabs(w.z);
 }
 
-inline double sin_theta2(const Vector3D& w) {
+inline double sin_theta2(const Vector3D w) {
   return fmax(0.0, 1.0 - cos_theta(w) * cos_theta(w));
 }
 
-inline double sin_theta(const Vector3D& w) {
+inline double sin_theta(const Vector3D w) {
   return sqrt(sin_theta2(w));
 }
 
-inline double cos_phi(const Vector3D& w) {
+inline double cos_phi(const Vector3D w) {
   double sinTheta = sin_theta(w);
   if (sinTheta == 0.0) return 1.0;
   return clamp(w.x / sinTheta, -1.0, 1.0);
 }
 
-inline double sin_phi(const Vector3D& w) {
+inline double sin_phi(const Vector3D w) {
   double sinTheta = sin_theta(w);
   if (sinTheta) return 0.0;
   return clamp(w.y / sinTheta, -1.0, 1.0);
 }
 
-void make_coord_space(Matrix3x3& o2w, const Vector3D& n);
+void make_coord_space(Matrix3x3& o2w, const Vector3D n);
 
 /**
  * Interface for BSDFs.
@@ -69,7 +68,7 @@ class BSDF {
    * \param wi incident light direction in local space of point of intersection
    * \return reflectance in the given incident/outgoing directions
    */
-  virtual Spectrum f (const Vector3D& wo, const Vector3D& wi) = 0;
+  virtual Vector3D f (const Vector3D wo, const Vector3D wi) = 0;
 
   /**
    * Evaluate BSDF.
@@ -82,14 +81,14 @@ class BSDF {
    * \param pdf address to store the pdf of the sampled incident direction
    * \return reflectance in the output incident and given outgoing directions
    */
-  virtual Spectrum sample_f (const Vector3D& wo, Vector3D* wi, float* pdf) = 0;
+  virtual Vector3D sample_f (const Vector3D wo, Vector3D* wi, double* pdf) = 0;
 
   /**
    * Get the emission value of the surface material. For non-emitting surfaces
-   * this would be a zero energy spectrum.
-   * \return emission spectrum of the surface material
+   * this would be a zero energy Vector3D.
+   * \return emission Vector3D of the surface material
    */
-  virtual Spectrum get_emission () const = 0;
+  virtual Vector3D get_emission () const = 0;
 
   /**
    * If the BSDF is a delta distribution. Materials that are perfectly specular,
@@ -100,15 +99,17 @@ class BSDF {
    */
   virtual bool is_delta() const = 0;
 
+  virtual void render_debugger_node() {};
+
   /**
    * Reflection helper
    */
-  virtual void reflect(const Vector3D& wo, Vector3D* wi);
+  virtual void reflect(const Vector3D wo, Vector3D* wi);
 
   /**
    * Refraction helper
    */
-  virtual bool refract(const Vector3D& wo, Vector3D* wi, float ior);
+  virtual bool refract(const Vector3D wo, Vector3D* wi, double ior);
 
   const HDRImageBuffer* reflectanceMap;
   const HDRImageBuffer* normalMap;
@@ -122,15 +123,17 @@ class DiffuseBSDF : public BSDF {
  public:
 
   /**
-   * DiffuseBSDFs are constructed with a Spectrum as input,
+   * DiffuseBSDFs are constructed with a Vector3D as input,
    * which is stored into the member variable `reflectance`.
    */
-  DiffuseBSDF(const Spectrum& a) : reflectance(a) { }
+  DiffuseBSDF(const Vector3D a) : reflectance(a) { }
 
-  Spectrum f(const Vector3D& wo, const Vector3D& wi);
-  Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
-  Spectrum get_emission() const { return Spectrum(); }
+  Vector3D f(const Vector3D wo, const Vector3D wi);
+  Vector3D sample_f(const Vector3D wo, Vector3D* wi, double* pdf);
+  Vector3D get_emission() const { return Vector3D(); }
   bool is_delta() const { return false; }
+
+  void render_debugger_node();
 
 private:
   /*
@@ -138,7 +141,7 @@ private:
    * which ranges from [0,1] in RGB, representing a range of
    * total absorption(0) vs. total reflection(1) per color channel.
    */
-  Spectrum reflectance;
+  Vector3D reflectance;
   /*
    * A sampler object that can be used to obtain
    * a random Vector3D sampled according to a 
@@ -150,47 +153,66 @@ private:
 }; // class DiffuseBSDF
 
 /**
+ * Microfacet BSDF.
+ */
+
+class MicrofacetBSDF : public BSDF {
+public:
+
+  MicrofacetBSDF(const Vector3D eta, const Vector3D k, double alpha)
+    : eta(eta), k(k), alpha(alpha) { }
+
+  double getTheta(const Vector3D w) {
+    return acos(clamp(w.z, -1.0 + 1e-5, 1.0 - 1e-5));
+  }
+
+  double Lambda(const Vector3D w) {
+    double theta = getTheta(w);
+    double a = 1.0 / (alpha * tan(theta));
+    return 0.5 * (erf(a) - 1.0 + exp(-a * a) / (a * PI));
+  }
+
+  Vector3D F(const Vector3D wi);
+
+  double G(const Vector3D wo, const Vector3D wi);
+
+  double D(const Vector3D h);
+
+  Vector3D f(const Vector3D wo, const Vector3D wi);
+  Vector3D sample_f(const Vector3D wo, Vector3D* wi, double* pdf);
+  Vector3D get_emission() const { return Vector3D(); }
+  bool is_delta() const { return false; }
+
+  void render_debugger_node();
+
+private:
+  Vector3D eta, k;
+  double alpha;
+  UniformGridSampler2D sampler;
+  CosineWeightedHemisphereSampler3D cosineHemisphereSampler;
+}; // class MicrofacetBSDF
+
+/**
  * Mirror BSDF
  */
 class MirrorBSDF : public BSDF {
  public:
 
-  MirrorBSDF(const Spectrum& reflectance) : reflectance(reflectance) { }
+  MirrorBSDF(const Vector3D reflectance) : reflectance(reflectance) { }
 
-  Spectrum f(const Vector3D& wo, const Vector3D& wi);
-  Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
-  Spectrum get_emission() const { return Spectrum(); }
+  Vector3D f(const Vector3D wo, const Vector3D wi);
+  Vector3D sample_f(const Vector3D wo, Vector3D* wi, double* pdf);
+  Vector3D get_emission() const { return Vector3D(); }
   bool is_delta() const { return true; }
 
+  void render_debugger_node();
+
 private:
 
-  float roughness;
-  Spectrum reflectance;
+  double roughness;
+  Vector3D reflectance;
 
 }; // class MirrorBSDF*/
-
-/**
- * Glossy BSDF.
- */
-
-class GlossyBSDF : public BSDF {
- public:
-
-  GlossyBSDF(const Spectrum& reflectance, float shininess)
-    : reflectance(reflectance), shininess(shininess) { }
-
-  Spectrum f(const Vector3D& wo, const Vector3D& wi);
-  Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
-  Spectrum get_emission() const { return Spectrum(); }
-  bool is_delta() const { return false; }
-
-private:
-
-  float shininess;
-  Spectrum reflectance;
-  CosineWeightedHemisphereSampler3D sampler;
-
-}; // class GlossyBSDF
 
 /**
  * Refraction BSDF.
@@ -198,19 +220,21 @@ private:
 class RefractionBSDF : public BSDF {
  public:
 
-  RefractionBSDF(const Spectrum& transmittance, float roughness, float ior)
+  RefractionBSDF(const Vector3D transmittance, double roughness, double ior)
     : transmittance(transmittance), roughness(roughness), ior(ior) { }
 
-  Spectrum f(const Vector3D& wo, const Vector3D& wi);
-  Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
-  Spectrum get_emission() const { return Spectrum(); }
+  Vector3D f(const Vector3D wo, const Vector3D wi);
+  Vector3D sample_f(const Vector3D wo, Vector3D* wi, double* pdf);
+  Vector3D get_emission() const { return Vector3D(); }
   bool is_delta() const { return true; }
+
+  void render_debugger_node();
 
  private:
 
-  float ior;
-  float roughness;
-  Spectrum transmittance;
+  double ior;
+  double roughness;
+  Vector3D transmittance;
 
 }; // class RefractionBSDF
 
@@ -220,22 +244,24 @@ class RefractionBSDF : public BSDF {
 class GlassBSDF : public BSDF {
  public:
 
-  GlassBSDF(const Spectrum& transmittance, const Spectrum& reflectance,
-            float roughness, float ior) :
+  GlassBSDF(const Vector3D transmittance, const Vector3D reflectance,
+            double roughness, double ior) :
     transmittance(transmittance), reflectance(reflectance),
     roughness(roughness), ior(ior) { }
 
-  Spectrum f(const Vector3D& wo, const Vector3D& wi);
-  Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
-  Spectrum get_emission() const { return Spectrum(); }
+  Vector3D f(const Vector3D wo, const Vector3D wi);
+  Vector3D sample_f(const Vector3D wo, Vector3D* wi, double* pdf);
+  Vector3D get_emission() const { return Vector3D(); }
   bool is_delta() const { return true; }
+
+  void render_debugger_node();
 
  private:
 
-  float ior;
-  float roughness;
-  Spectrum reflectance;
-  Spectrum transmittance;
+  double ior;
+  double roughness;
+  Vector3D reflectance;
+  Vector3D transmittance;
 
 }; // class GlassBSDF
 
@@ -245,16 +271,18 @@ class GlassBSDF : public BSDF {
 class EmissionBSDF : public BSDF {
  public:
 
-  EmissionBSDF(const Spectrum& radiance) : radiance(radiance) { }
+  EmissionBSDF(const Vector3D radiance) : radiance(radiance) { }
 
-  Spectrum f(const Vector3D& wo, const Vector3D& wi);
-  Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
-  Spectrum get_emission() const { return radiance; }
+  Vector3D f(const Vector3D wo, const Vector3D wi);
+  Vector3D sample_f(const Vector3D wo, Vector3D* wi, double* pdf);
+  Vector3D get_emission() const { return radiance; }
   bool is_delta() const { return false; }
+
+  void render_debugger_node();
 
  private:
 
-  Spectrum radiance;
+  Vector3D radiance;
   CosineWeightedHemisphereSampler3D sampler;
 
 }; // class EmissionBSDF

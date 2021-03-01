@@ -42,23 +42,25 @@ namespace CGL {
          */
         void clear();
 
+        void autofocus(Vector2D loc);
+
         /**
          * Trace an ray in the scene.
          */
-        Spectrum estimate_direct_lighting_hemisphere(const Ray& r, const SceneObjects::Intersection& isect);
-        Spectrum estimate_direct_lighting_importance(const Ray& r, const SceneObjects::Intersection& isect);
+        Vector3D estimate_direct_lighting_hemisphere(const Ray& r, const SceneObjects::Intersection& isect);
+        Vector3D estimate_direct_lighting_importance(const Ray& r, const SceneObjects::Intersection& isect);
 
-        Spectrum est_radiance_global_illumination(const Ray& r);
-        Spectrum zero_bounce_radiance(const Ray& r, const SceneObjects::Intersection& isect);
-        Spectrum one_bounce_radiance(const Ray& r, const SceneObjects::Intersection& isect);
-        Spectrum at_least_one_bounce_radiance(const Ray& r, const SceneObjects::Intersection& isect);
+        Vector3D est_radiance_global_illumination(const Ray& r);
+        Vector3D zero_bounce_radiance(const Ray& r, const SceneObjects::Intersection& isect);
+        Vector3D one_bounce_radiance(const Ray& r, const SceneObjects::Intersection& isect);
+        Vector3D at_least_one_bounce_radiance(const Ray& r, const SceneObjects::Intersection& isect);
         
-        Spectrum debug_shading(const Vector3D& d) {
+        Vector3D debug_shading(const Vector3D d) {
             return Vector3D(abs(d.r), abs(d.g), .0).unit();
         }
 
-        Spectrum normal_shading(const Vector3D& n) {
-            return n * .5 + Spectrum(.5);
+        Vector3D normal_shading(const Vector3D n) {
+            return n * .5 + Vector3D(.5);
         }
 
         /**
@@ -76,7 +78,7 @@ namespace CGL {
         size_t ns_refr;       ///< number of samples - refractive surfaces
 
         size_t samplesPerBatch;
-        float maxTolerance;
+        double maxTolerance;
         bool direct_hemisphere_sample; ///< true if sampling uniformly from hemisphere for direct lighting. Otherwise, light sample
 
         // Components //
@@ -95,10 +97,10 @@ namespace CGL {
 
         // Tonemapping Controls //
 
-        float tm_gamma;                           ///< gamma
-        float tm_level;                           ///< exposure level
-        float tm_key;                             ///< key value
-        float tm_wht;                             ///< white point
+        double tm_gamma;                           ///< gamma
+        double tm_level;                           ///< exposure level
+        double tm_key;                             ///< key value
+        double tm_wht;                             ///< white point
     };
 
 }  // namespace CGL

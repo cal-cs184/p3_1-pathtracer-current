@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include "CGL/misc.h"
+#include "CGL/vector2D.h"
 #include "CGL/vector3D.h"
 
 using std::cout;
@@ -49,7 +50,7 @@ void Camera::configure(const CameraInfo& info, size_t screenW, size_t screenH) {
  * This function places the camera at the target position and sets the arguments.
  * Phi and theta are in RADIANS.
  */
-void Camera::place(const Vector3D& targetPos, const double phi,
+void Camera::place(const Vector3D targetPos, const double phi,
                    const double theta, const double r, const double minR,
                    const double maxR) {
   double r_ = min(max(r, minR), maxR);
@@ -64,7 +65,7 @@ void Camera::place(const Vector3D& targetPos, const double phi,
 }
 
 /**
- * Copies just placement data from the other camera.
+ * This function copies the camera placement state.
  */
 void Camera::copy_placement(const Camera& other) {
   pos = other.pos;
@@ -77,8 +78,7 @@ void Camera::copy_placement(const Camera& other) {
 }
 
 /**
- * Updates the screen size to be the specified size, keeping screenDist
- * constant.
+ * This sets the screen size & compute the new FOV.
  */
 void Camera::set_screen_size(const size_t screenW, const size_t screenH) {
   this->screenW = screenW;
@@ -89,20 +89,18 @@ void Camera::set_screen_size(const size_t screenW, const size_t screenH) {
 }
 
 /**
- * Translates the camera such that a value at distance d directly in front of
- * the camera moves by (dx, dy). Note that dx and dy are in screen coordinates,
- * while d is in world-space coordinates (like pos/dir/up).
+ * This function translates the camera position
  */
 void Camera::move_by(const double dx, const double dy, const double d) {
   const double scaleFactor = d / screenDist;
-  const Vector3D& displacement =
+  const Vector3D displacement =
     c2w[0] * (dx * scaleFactor) + c2w[1] * (dy * scaleFactor);
   pos += displacement;
   targetPos += displacement;
 }
 
 /**
- * Move the specified amount along the view axis.
+ * This function translates the camera position (in forward direction)
  */
 void Camera::move_forward(const double dist) {
   double newR = min(max(r - dist, minR), maxR);
@@ -111,7 +109,7 @@ void Camera::move_forward(const double dist) {
 }
 
 /**
- * Rotate by the specified amount around the target.
+ * This function rotates the camera position
  */
 void Camera::rotate_by(const double dPhi, const double dTheta) {
   phi = clamp(phi + dPhi, 0.0, (double) PI);
@@ -120,7 +118,7 @@ void Camera::rotate_by(const double dPhi, const double dTheta) {
 }
 
 /**
- * Computes the camera position, basis vectors, and the view matrix
+ * This function computes the camera position, basis vectors, and the view matrix
  */
 void Camera::compute_position() {
   double sinPhi = sin(phi);
@@ -148,7 +146,7 @@ void Camera::compute_position() {
 }
 
 /**
- * Stores the camera settings into a file
+ * This function stores the camera settings into a file
  */
 void Camera::dump_settings(string filename) {
   ofstream file(filename);
@@ -163,11 +161,12 @@ void Camera::dump_settings(string filename) {
     file << c2w(i/3, i%3) << " ";
   file << endl;
   file << screenW << " " << screenH << " " << screenDist << endl;
+  file << focalDistance << " " << lensRadius << endl;
   cout << "[Camera] Dumped settings to " << filename << endl;
 }
 
 /**
- * Loads the camera settings from a file
+ * This function loads the camera settings from a file
  */
 void Camera::load_settings(string filename) {
   ifstream file(filename);
@@ -181,18 +180,12 @@ void Camera::load_settings(string filename) {
   for (int i = 0; i < 9; ++i)
     file >> c2w(i/3, i%3);
   file >> screenW >> screenH >> screenDist;
+  file >> focalDistance >> lensRadius;
   cout << "[Camera] Loaded settings from " << filename << endl;
 }
 
 /**
- * Returns a world-space ray from the camera that corresponds to a
- * ray exiting the camera that deposits light on the sensor plane,
- * positioned in normalized image space given by (x,y).  x and y are
- * provided in the normalized coordinate space of the image / output
- * device.  For example (0.5, 0.5) corresponds to the middle of the screen.
- *
- * \param x x-coordinate of the pixel in normalized image space
- * \param y y-coordinate of the pixel in normalized image space
+ * This function generates a ray from camera perspective, passing through camera / sensor plane (x,y)
  */
 Ray Camera::generate_ray(double x, double y) const {
 
@@ -202,8 +195,9 @@ Ray Camera::generate_ray(double x, double y) const {
   // Note: hFov and vFov are in degrees.
   //
 
-  return Ray(pos, Vector3D(0, 0, -1));
-}
 
+  return Ray(pos, Vector3D(0, 0, -1));
+
+}
 
 } // namespace CGL

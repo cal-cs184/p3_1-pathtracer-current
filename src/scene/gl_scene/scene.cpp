@@ -3,6 +3,8 @@
 using std::cout;
 using std::endl;
 
+#include "application/visual_debugger.h"
+
 namespace CGL { namespace GLScene {
 
 BBox Scene::get_bbox() {
@@ -23,6 +25,29 @@ void Scene::set_draw_styles(DrawStyle *defaultStyle, DrawStyle *hoveredStyle,
 void Scene::render_in_opengl() {
   for (SceneObject *obj : objects) {
     obj->render_in_opengl();
+  }
+}
+
+void Scene::render_debugger_node()
+{
+  // Lights
+  if (ImGui::TreeNode("Lights (Does not sync with model)"))
+  {
+    for (SceneLight* obj : lights) {
+      obj->render_debugger_node();
+    }
+
+    ImGui::TreePop();
+  }
+
+  // Objects
+  if (ImGui::TreeNode("Objects (Does not sync with lights)"))
+  {
+    for (SceneObject* obj : objects) {
+      obj->render_debugger_node();
+    }
+
+    ImGui::TreePop();
   }
 }
 

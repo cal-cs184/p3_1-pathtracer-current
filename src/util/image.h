@@ -2,7 +2,7 @@
 #define CGL_IMAGE_H
 
 #include "CGL/color.h"
-#include "CGL/spectrum.h"
+#include "CGL/vector3D.h"
 
 #include <vector>
 #include <string.h>
@@ -82,7 +82,7 @@ struct ImageBuffer {
 };
 
 /**
- * High Dynamic Range image buffer which stores linear space spectrum
+ * High Dynamic Range image buffer which stores linear space Vector3D
  * values with 32 bit floating points.
  */
 struct HDRImageBuffer {
@@ -115,11 +115,11 @@ struct HDRImageBuffer {
 
   /**
    * Update the color of a given pixel.
-   * \param s new spectrum value to be set
+   * \param s new Vector3D value to be set
    * \param x row of the pixel
    * \param y column of the pixel
    */
-  void update_pixel(const Spectrum& s, size_t x, size_t y) {
+  void update_pixel(const Vector3D& s, size_t x, size_t y) {
     // assert(0 <= x && x < w);
     // assert(0 <= y && y < h);
     data[x + y * w] = s;
@@ -129,12 +129,12 @@ struct HDRImageBuffer {
    * Update the color of a given pixel. Blend new pixel color with current
    * pixel data in the buffer according to the blending factor. The result
    * of this would be buffer[i] = s * r + buffer[i] * (1-r);
-   * \param s new spectrum value to be set
+   * \param s new Vector3D value to be set
    * \param x row of the pixel
    * \param y column of the pixel
    * \param r blending factor
    */
-  void update_pixel(const Spectrum& s, size_t x, size_t y, float r) {
+  void update_pixel(const Vector3D& s, size_t x, size_t y, float r) {
     // assert(0 <= x && x < w);
     // assert(0 <= y && y < h);
     data[x + y * w] = s * r + (1 - r) * data[x + y * w];
@@ -165,7 +165,7 @@ struct HDRImageBuffer {
     float exposure = sqrt(pow(2,level));
     for (size_t y = 0; y < h; ++y) {
       for (size_t x = 0; x < w; ++x) {
-        Spectrum s = data[x + y * w];
+        Vector3D s = data[x + y * w];
         float l = s.illum();
         s *= key / avg;
         s *= ((l + 1) / (wht * wht)) / (l + 1);
@@ -188,10 +188,10 @@ struct HDRImageBuffer {
     float exposure = sqrt(pow(2,level));
     for (size_t y = y0; y < y1; ++y) {
       for (size_t x = x0; x < x1; ++x) {
-        const Spectrum& s = data[x + y * w];
-        float r = pow(s.r * exposure, one_over_gamma);
-        float g = pow(s.g * exposure, one_over_gamma);
-        float b = pow(s.b * exposure, one_over_gamma);
+        const Vector3D& s = data[x + y * w];
+        float r = std::max(0.0, std::min(pow(s.r * exposure, one_over_gamma), 1.0));
+        float g = std::max(0.0, std::min(pow(s.g * exposure, one_over_gamma), 1.0));
+        float b = std::max(0.0, std::min(pow(s.b * exposure, one_over_gamma), 1.0));
         target.update_pixel(Color(r, g, b), x, y);
       }
     }
@@ -207,12 +207,12 @@ struct HDRImageBuffer {
    */
   void clear() {
     data.clear();
-    data.resize(w * h, Spectrum(0.0));
+    data.resize(w * h, Vector3D(0.0));
   }
 
   size_t w; ///< width
   size_t h; ///< height
-  std::vector<Spectrum> data; ///< pixel buffer
+  std::vector<Vector3D> data; ///< pixel buffer
 
 }; // class HDRImageBuffer
 

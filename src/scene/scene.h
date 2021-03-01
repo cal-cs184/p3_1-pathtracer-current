@@ -34,8 +34,8 @@ class SceneObject {
  */
 class SceneLight {
  public:
-  virtual Spectrum sample_L(const Vector3D& p, Vector3D* wi,
-                            float* distToLight, float* pdf) const = 0;
+  virtual Vector3D sample_L(const Vector3D p, Vector3D* wi,
+                            double* distToLight, double* pdf) const = 0;
   virtual bool is_delta_light() const = 0;
 
 };
@@ -61,7 +61,7 @@ struct Scene {
   // Adding object with emission BSDFs as mesh lights and sphere lights so 
   // that light sampling configurations also applies to mesh lights. 
 //  for (SceneObjects *obj : objects) {
-//    if (obj->get_material().emit != Spectrum()) {
+//    if (obj->get_material().emit != Vector3D()) {
 //      
 //      // mesh light
 //      if (dynamic_cast<Mesh*>(obj)) {

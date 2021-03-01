@@ -27,11 +27,11 @@ map<string, XMLElement*> ColladaParser::sources; // URI lookup table
 
 // Parser Helpers //
 
-inline Spectrum spectrum_from_string ( string spectrum_string ) {
+inline Vector3D spectrum_from_string ( string Vector3D_string ) {
 
-  Spectrum s;
+  Vector3D s;
 
-  stringstream ss (spectrum_string);
+  stringstream ss (Vector3D_string);
   ss >> s.r;
   ss >> s.g;
   ss >> s.b;
@@ -875,26 +875,29 @@ void ColladaParser::parse_material ( XMLElement* xml, MaterialInfo& material ) {
         string type = e_bsdf->Name();
         if (type == "emission") {
           XMLElement *e_radiance  = get_element(e_bsdf, "radiance");
-          Spectrum radiance = spectrum_from_string(string(e_radiance->GetText()));
+          Vector3D radiance = spectrum_from_string(string(e_radiance->GetText()));
           BSDF* bsdf = new EmissionBSDF(radiance);
           material.bsdf = bsdf;
         } else if (type == "mirror") {
           XMLElement *e_reflectance  = get_element(e_bsdf, "reflectance");
-          Spectrum reflectance = spectrum_from_string(string(e_reflectance->GetText()));
+          Vector3D reflectance = spectrum_from_string(string(e_reflectance->GetText()));
           BSDF* bsdf = new MirrorBSDF(reflectance);
           material.bsdf = bsdf;
-        } else if (type == "glossy") {
-          XMLElement *e_reflectance  = get_element(e_bsdf, "reflectance");
-          XMLElement *e_shininess = get_element(e_bsdf, "shininess");
-          Spectrum reflectance = spectrum_from_string(string(e_reflectance->GetText()));
-          float shininess = atof(e_shininess->GetText());
-          BSDF* bsdf = new GlossyBSDF(reflectance, shininess);
+        } else if (type == "microfacet") {
+          XMLElement* e_reflectance = get_element(e_bsdf, "reflectance");
+          XMLElement* e_alpha = get_element(e_bsdf, "alpha");
+          XMLElement* e_eta = get_element(e_bsdf, "eta");
+          XMLElement* e_k = get_element(e_bsdf, "k");
+          float alpha = atof(e_alpha->GetText());
+          Vector3D eta = spectrum_from_string(string(e_eta->GetText()));
+          Vector3D k = spectrum_from_string(string(e_k->GetText()));
+          BSDF* bsdf = new MicrofacetBSDF(eta, k, alpha);
           material.bsdf = bsdf;
         } else if (type == "refraction") {
           XMLElement *e_transmittance  = get_element(e_bsdf, "transmittance");
           XMLElement *e_roughness = get_element(e_bsdf, "roughness");
           XMLElement *e_ior = get_element(e_bsdf, "ior");
-          Spectrum transmittance = spectrum_from_string(string(e_transmittance->GetText()));
+          Vector3D transmittance = spectrum_from_string(string(e_transmittance->GetText()));
           float roughness = atof(e_roughness->GetText());
           float ior = atof(e_ior->GetText());
           BSDF* bsdf = new RefractionBSDF(transmittance, roughness, ior);
@@ -904,8 +907,8 @@ void ColladaParser::parse_material ( XMLElement* xml, MaterialInfo& material ) {
           XMLElement *e_reflectance  = get_element(e_bsdf, "reflectance");
           XMLElement *e_roughness = get_element(e_bsdf, "roughness");
           XMLElement *e_ior = get_element(e_bsdf, "ior");
-          Spectrum transmittance = spectrum_from_string(string(e_transmittance->GetText()));
-          Spectrum reflectance = spectrum_from_string(string(e_reflectance->GetText()));
+          Vector3D transmittance = spectrum_from_string(string(e_transmittance->GetText()));
+          Vector3D reflectance = spectrum_from_string(string(e_reflectance->GetText()));
           float roughness = atof(e_roughness->GetText());
           float ior = atof(e_ior->GetText());
           BSDF* bsdf = new GlassBSDF(transmittance, reflectance, roughness, ior);
@@ -916,13 +919,13 @@ void ColladaParser::parse_material ( XMLElement* xml, MaterialInfo& material ) {
     } else if (tech_common) {
       XMLElement* e_diffuse = get_element(tech_common, "phong/diffuse/color");
       if (e_diffuse) {
-        Spectrum reflectance = spectrum_from_string(string(e_diffuse->GetText()));
+        Vector3D reflectance = spectrum_from_string(string(e_diffuse->GetText()));
         material.bsdf = new DiffuseBSDF(reflectance);
       } else {
-        material.bsdf = new DiffuseBSDF(Spectrum(.5f,.5f,.5f));
+        material.bsdf = new DiffuseBSDF(Vector3D(.5f,.5f,.5f));
       }
     } else {
-      BSDF* bsdf = new DiffuseBSDF(Spectrum(.5f,.5f,.5f));
+      BSDF* bsdf = new DiffuseBSDF(Vector3D(.5f,.5f,.5f));
       material.bsdf = bsdf;
     }
   } else {

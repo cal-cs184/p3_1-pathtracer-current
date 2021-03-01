@@ -54,7 +54,7 @@ class SphereObject : public SceneObject {
   * Constructor.
   * Construct a static sphere for rendering from given parameters
   */
-  SphereObject(const Vector3D& o, double r, BSDF* bsdf);
+  SphereObject(const Vector3D o, double r, BSDF* bsdf);
 
   /**
   * Get all the primitives (Sphere) in the sphere object.

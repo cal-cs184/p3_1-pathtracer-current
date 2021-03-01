@@ -28,7 +28,9 @@ bool Triangle::has_intersection(const Ray &r) const {
   // function records the "intersection" while this function only tests whether
   // there is a intersection.
 
+
   return true;
+
 }
 
 bool Triangle::intersect(const Ray &r, Intersection *isect) const {
@@ -36,7 +38,10 @@ bool Triangle::intersect(const Ray &r, Intersection *isect) const {
   // implement ray-triangle intersection. When an intersection takes
   // place, the Intersection data should be updated accordingly
 
+
   return true;
+
+
 }
 
 void Triangle::draw(const Color &c, float alpha) const {

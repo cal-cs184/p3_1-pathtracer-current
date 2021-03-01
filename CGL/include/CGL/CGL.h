@@ -20,7 +20,6 @@ class Quaternion;
 class Complex;
 
 class Color;
-typedef Vector3D Spectrum;
 
 class Renderer;
 class OSDText;

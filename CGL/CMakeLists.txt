@@ -37,16 +37,18 @@ include(find_avx.cmake)
 CHECK_FOR_AVX()
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL Clang OR ${CMAKE_CXX_COMPILER_ID} STREQUAL AppleClang)
-    set(CGL_CXX_FLAGS "-std=c++11 -m64")
+    set(CGL_CXX_FLAGS "-std=c++11 -m64 -fPIC")
     set(CGL_CXX_FLAGS "${CGL_CXX_FLAGS} -O3")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 endif()
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
-    set(CGL_CXX_FLAGS "-std=c++11 -m64")
-    set(CGL_CXX_FLAGS "${CGL_CXX_FLAGS} -O3 -fopenmp")
+    set(CGL_CXX_FLAGS "-std=c++11 -m64 -fPIC")
+    set(CGL_CXX_FLAGS "${CGL_CXX_FLAGS} -O3")
     if (CGL_BUILD_DEBUG)
         set(CGL_CXX_FLAGS "${CGL_CXX_FLAGS} -ggdb")
     endif()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 endif()
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
@@ -70,7 +72,6 @@ set(CGL_SOURCE
     src/quaternion.cpp
     src/complex.cpp
     src/color.cpp
-    src/spectrum.cpp
     src/osdtext.cpp
     src/osdfont.cpp
     src/viewer.cpp

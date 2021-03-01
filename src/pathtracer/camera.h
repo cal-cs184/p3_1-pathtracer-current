@@ -30,7 +30,7 @@ class Camera {
   /*
     Phi and theta are in RADIANS.
   */
-  void place(const Vector3D& targetPos, const double phi, const double theta,
+  void place(const Vector3D targetPos, const double phi, const double theta,
              const double r, const double minR, const double maxR);
 
   string param_string() {
@@ -78,15 +78,21 @@ class Camera {
 
   /**
    * Returns a world-space ray from the camera that corresponds to a
-   * ray exiting the camera that deposits light on the sensor plane,
-   * positioned in normalized image space given by (x,y).  x and y are
-   * provided in the normalized coordinate space of the image / output
-   * device.  For example (0.5, 0.5) corresponds to the middle of the screen.
+   * ray exiting the camera that deposits light at the sensor plane
+   * position given by (x,y).  x and y are provided in the normalized
+   * coordinate space of the sensor.  For example (0.5, 0.5)
+   * corresponds to the middle of the screen.
    *
-   * \param x x-coordinate of the pixel in normalized image space
-   * \param y y-coordinate of the pixel in normalized image space
+   * \param x x-coordinate of the ray sample in the view plane
+   * \param y y-coordinate of the ray sample in the view plane
    */
   Ray generate_ray(double x, double y) const;
+
+  Ray generate_ray_for_thin_lens(double x, double y, double rndR, double rndTheta) const;
+
+  // Lens aperture and focal distance for depth of field effects.
+  double lensRadius;
+  double focalDistance;
 
  private:
   // Computes pos, screenXDir, screenYDir from target, r, phi, theta.

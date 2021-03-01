@@ -37,7 +37,7 @@ struct BBox {
    * Constructor.
    * Creates a bounding box that includes a single point.
    */
-  BBox(const Vector3D& p) : min(p), max(p) { extent = max - min; }
+  BBox(const Vector3D p) : min(p), max(p) { extent = max - min; }
 
   /**
    * Constructor.
@@ -45,7 +45,7 @@ struct BBox {
    * \param min the min corner
    * \param max the max corner
    */
-  BBox(const Vector3D& min, const Vector3D& max) :
+  BBox(const Vector3D min, const Vector3D max) :
        min(min), max(max) { extent = max - min; }
 
   /**
@@ -83,7 +83,7 @@ struct BBox {
    * point.
    * \param p the point to be included
    */
-  void expand(const Vector3D& p) {
+  void expand(const Vector3D p) {
     min.x = std::min(min.x, p.x);
     min.y = std::min(min.y, p.y);
     min.z = std::min(min.z, p.z);

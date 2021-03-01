@@ -1,7 +1,7 @@
 #ifndef CGL_COLLADA_LIGHTINFO_H
 #define CGL_COLLADA_LIGHTINFO_H
 
-#include "CGL/spectrum.h"
+#include "CGL/vector3D.h"
 
 #include "collada_info.h"
 
@@ -26,7 +26,7 @@ class LightInfo : public Instance {
 
   LightType::T light_type;  ///< type 
 
-  Spectrum spectrum;        ///< spectrum 
+  Vector3D spectrum;        ///< spectrum 
 
   Vector3D position;        ///< position
   Vector3D direction;       ///< direction

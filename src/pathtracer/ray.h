@@ -5,7 +5,6 @@
 #include "CGL/vector3D.h"
 #include "CGL/vector4D.h"
 #include "CGL/matrix4x4.h"
-#include "CGL/spectrum.h"
 
 #define PART 5
 
@@ -27,7 +26,8 @@ struct Ray {
   mutable double max_t; ///< treat the ray as a segment (ray "ends" at max_t)
 
   Vector3D inv_d;  ///< component wise inverse
-  int sign[3];     ///< fast ray-bbox intersection
+
+  Ray() {}
 
   /**
    * Constructor.
@@ -36,12 +36,9 @@ struct Ray {
    * \param d direction of the ray
    * \param depth depth of the ray
    */
-    Ray(const Vector3D& o, const Vector3D& d, int depth = 0)
+    Ray(const Vector3D o, const Vector3D d, int depth = 0)
         : o(o), d(d), min_t(0.0), max_t(INF_D), depth(depth) {
-    inv_d = Vector3D(1 / d.x, 1 / d.y, 1 / d.z);
-    sign[0] = (inv_d.x < 0);
-    sign[1] = (inv_d.y < 0);
-    sign[2] = (inv_d.z < 0);
+    inv_d = 1.0 / d;
   }
 
   /**
@@ -52,12 +49,9 @@ struct Ray {
    * \param max_t max t value for the ray (if it's actually a segment)
    * \param depth depth of the ray
    */
-    Ray(const Vector3D& o, const Vector3D& d, double max_t, int depth = 0)
+    Ray(const Vector3D o, const Vector3D d, double max_t, int depth = 0)
         : o(o), d(d), min_t(0.0), max_t(max_t), depth(depth) {
-    inv_d = Vector3D(1 / d.x, 1 / d.y, 1 / d.z);
-    sign[0] = (inv_d.x < 0);
-    sign[1] = (inv_d.y < 0);
-    sign[2] = (inv_d.z < 0);
+    inv_d = 1.0 / d;
   }
 
 

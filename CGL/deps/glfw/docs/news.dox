@@ -27,6 +27,15 @@ are still available.
 For more information see @ref cursor_standard.
 
 
+@subsubsection features_34_angle_backend Support for ANGLE rendering backend selection
+
+GLFW now provides the
+[GLFW_ANGLE_PLATFORM_TYPE](@ref GLFW_ANGLE_PLATFORM_TYPE_hint) init hint for
+requesting a specific rendering backend when using
+[ANGLE](https://chromium.googlesource.com/angle/angle/) to create OpenGL ES
+contexts.
+
+
 @subsubsection features_34_win32_keymenu Support for keyboard access to Windows window menu
 
 GLFW now provides the
@@ -52,6 +61,13 @@ add_subdirectory(path/to/glfw)
 @endcode
 
 
+@subsubsection initmenu_34 macOS main menu now created at initialization
+
+GLFW now creates the main menu and completes the initialization of NSApplication
+during initialization.  Programs that do not want a main menu can disable it
+with the [GLFW_COCOA_MENUBAR](@ref GLFW_COCOA_MENUBAR_hint) init hint.
+
+
 @subsubsection corevideo_34 CoreVideo dependency has been removed
 
 GLFW no longer depends on the CoreVideo framework on macOS and it no longer
@@ -61,6 +77,13 @@ needs to be specified during compilation or linking.
 @subsection deprecations_34 Deprecations in version 3.4
 
 @subsection removals_34 Removals in 3.4
+
+@subsubsection wl_shell_34 Support for the wl_shell protocol has been removed
+
+Support for the wl_shell protocol has been removed and GLFW now only supports
+the XDG-Shell protocol.  If your Wayland compositor does not support XDG-Shell
+then GLFW will fail to initialize.
+
 
 @subsection symbols_34 New symbols in version 3.4
 
@@ -77,6 +100,17 @@ needs to be specified during compilation or linking.
  - @ref GLFW_NOT_ALLOWED_CURSOR
  - @ref GLFW_CURSOR_UNAVAILABLE
  - @ref GLFW_WIN32_KEYBOARD_MENU
+ - @ref GLFW_CONTEXT_DEBUG
+ - @ref GLFW_FEATURE_UNAVAILABLE
+ - @ref GLFW_FEATURE_UNIMPLEMENTED
+ - @ref GLFW_ANGLE_PLATFORM_TYPE
+ - @ref GLFW_ANGLE_PLATFORM_TYPE_NONE
+ - @ref GLFW_ANGLE_PLATFORM_TYPE_OPENGL
+ - @ref GLFW_ANGLE_PLATFORM_TYPE_OPENGLES
+ - @ref GLFW_ANGLE_PLATFORM_TYPE_D3D9
+ - @ref GLFW_ANGLE_PLATFORM_TYPE_D3D11
+ - @ref GLFW_ANGLE_PLATFORM_TYPE_VULKAN
+ - @ref GLFW_ANGLE_PLATFORM_TYPE_METAL
 
 
 @section news_archive Release notes for earlier versions

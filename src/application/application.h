@@ -38,6 +38,8 @@ using namespace std;
 
 namespace CGL {
 
+  class VisualDebugger;
+
 struct AppConfig {
 
   AppConfig () {
@@ -58,6 +60,8 @@ struct AppConfig {
     pathtracer_direct_hemisphere_sample = false;
 
     pathtracer_filename = "";
+    pathtracer_lensRadius = 0.0;
+    pathtracer_focalDistance = 4.7;
   }
 
   size_t pathtracer_ns_aa;
@@ -77,6 +81,9 @@ struct AppConfig {
   bool pathtracer_direct_hemisphere_sample;
 
   string pathtracer_filename;
+
+  double pathtracer_lensRadius;
+  double pathtracer_focalDistance;
 };
 
 class Application : public Renderer {
@@ -108,13 +115,16 @@ class Application : public Renderer {
     camera.load_settings(filename);
   }
 
- private:
-
   enum Mode {
     EDIT_MODE,
     RENDER_MODE,
     VISUALIZE_MODE
   };
+
+private:
+
+  VisualDebugger* debugger;
+
   Mode mode;
 
   void to_edit_mode();

@@ -26,6 +26,8 @@ public:
    */
   Triangle(const Mesh* mesh, size_t v1, size_t v2, size_t v3);
 
+  Triangle() {};
+
   /**
    * Get the world space bounding box of the triangle.
    * \return world space bounding box of the triangle
@@ -70,8 +72,6 @@ public:
    * Draw outline with OpenGL (for visualizer)
    */
   void drawOutline(const Color& c, float alpha) const;
-
-private:
 
   Vector3D p1, p2, p3;
   Vector3D n1, n2, n3;

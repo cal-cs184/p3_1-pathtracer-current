@@ -9,13 +9,15 @@ namespace CGL { namespace GLScene {
 
 class Sphere : public SceneObject {
  public:
-  Sphere(const Collada::SphereInfo& sphereInfo, const Vector3D& position,
+  Sphere(const Collada::SphereInfo& sphereInfo, const Vector3D position,
          const double scale);
 
   void set_draw_styles(DrawStyle *defaultStyle, DrawStyle *hoveredStyle,
                        DrawStyle *selectedStyle);
 
   void render_in_opengl() const;
+
+  void render_debugger_node();
 
   BBox get_bbox();
 
@@ -35,8 +37,7 @@ class Sphere : public SceneObject {
   BSDF* get_bsdf();
   SceneObjects::SceneObject *get_static_object();
 
- private:
-
+private:
   double r;
   Vector3D p;
   BSDF* bsdf;
