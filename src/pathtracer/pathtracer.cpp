@@ -170,22 +170,6 @@ Vector3D PathTracer::est_radiance_global_illumination(const Ray &r) {
 }
 
 void PathTracer::raytrace_pixel(size_t x, size_t y) {
-
-  int const watermark[5][48] = {
-      {0, 1, 1, 1,   0, 1, 1, 1,   0, 1, 1, 0,   0, 1, 1, 0,   1, 0, 0, 1,   0, 0, 0, 0,   0, 1, 1, 0,   1, 0, 0, 1,   0, 1, 1, 0,   0, 1, 1, 0,   0, 1, 1, 0,   0, 1, 1, 0},
-      {1, 0, 0, 0,   1, 0, 0, 0,   0, 0, 1, 0,   1, 0, 0, 1,   1, 0, 0, 1,   0, 0, 0, 0,   1, 0, 0, 0,   1, 0, 0, 1,   1, 0, 0, 1,   1, 0, 0, 1,   1, 0, 0, 1,   1, 0, 0, 1},
-      {1, 0, 0, 0,   0, 1, 1, 0,   0, 0, 1, 0,   0, 1, 1, 0,   0, 1, 1, 1,   0, 0, 0, 0,   0, 1, 1, 0,   1, 0, 0, 1,   0, 0, 1, 0,   1, 0, 0, 1,   0, 0, 1, 0,   1, 0, 0, 1},
-      {1, 0, 0, 0,   0, 0, 0, 1,   0, 0, 1, 0,   1, 0, 0, 1,   0, 0, 0, 1,   0, 0, 0, 0,   0, 0, 0, 1,   1, 0, 0, 1,   0, 1, 0, 0,   1, 0, 0, 1,   0, 1, 0, 0,   1, 0, 0, 1},
-      {0, 1, 1, 1,   1, 1, 1, 0,   0, 1, 1, 1,   0, 1, 1, 0,   0, 0, 0, 1,   0, 0, 0, 0,   1, 1, 1, 0,   0, 1, 1, 0,   1, 1, 1, 1,   0, 1, 1, 0,   1, 1, 1, 1,   0, 1, 1, 0},
-  };
-
-  if (y < 5 && x < 48) {
-    if (watermark[4 - y][x] == 1) {
-      sampleBuffer.update_pixel(Vector3D(10, 10, 10), x, y);
-      return;
-    }
-  }
-
   // TODO (Part 1.2):
   // Make a loop that generates num_samples camera rays and traces them
   // through the scene. Return the average Vector3D.
