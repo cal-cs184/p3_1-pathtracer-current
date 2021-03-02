@@ -186,7 +186,7 @@ void PathTracer::raytrace_pixel(size_t x, size_t y) {
     }
   }
 
-  // TODO (Part 1.1):
+  // TODO (Part 1.2):
   // Make a loop that generates num_samples camera rays and traces them
   // through the scene. Return the average Vector3D.
   // You should call est_radiance_global_illumination in this function.
