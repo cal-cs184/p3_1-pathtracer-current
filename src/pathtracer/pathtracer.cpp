@@ -136,6 +136,9 @@ Vector3D PathTracer::at_least_one_bounce_radiance(const Ray &r,
 
   Vector3D L_out(0, 0, 0);
 
+  // TODO: Part 4, Task 2
+  // Returns the one bounce radiance + radiance from extra bounces at this point.
+  // Should be called recursively to simulate extra bounces.
 
 
   return L_out;
