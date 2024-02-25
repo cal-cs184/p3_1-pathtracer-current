@@ -68,6 +68,16 @@ void region_selector(const float canvas_height, const float width, const float h
         y = static_cast<int>((start_pos.y - canvas_pos.y) / scale_factor);
         dx = static_cast<int>((end_pos.x - start_pos.x) / scale_factor);
         dy = static_cast<int>((end_pos.y - start_pos.y) / scale_factor);
+
+        // flip signs with negative dx, dy
+        if (dx < 0) {
+          x += dx;
+          dx = -dx;
+        }
+        if (dy < 0) {
+          y += dy;
+          dy = -dy;
+        }
         ImGui::Text("Region X, Y: (%i, %i)", x, y);
         ImGui::Text("Region dx, dy: (%i, %i)", dx, dy);
     }
@@ -121,26 +131,29 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
     // For pathtracer_envmap, consider providing a file picker or similar method
     // for assignment.
 
-    ImGui::Separator();
-
+    {
+      ImGui::Separator();
+      Utils::title_text("Adaptive Sampling");
+      ImGui::InputFloat("Max Tolerance", &a_settings.pathtracer_max_tolerance);
+      ImGui::InputInt(
+          "Samples Per Patch",
+          reinterpret_cast<int *>(&a_settings.pathtracer_samples_per_patch));
+    }
     const int char_buf_size = 64;
-    static char file_name_buf[char_buf_size];
-    strncpy(file_name_buf, a_settings.scene_file_path.c_str(), char_buf_size);
     static bool scene_file_exists = dae_exists(a_settings.scene_file_path);
-    if (ImGui::InputText("Scene File", file_name_buf, char_buf_size)) {
-      a_settings.scene_file_path = file_name_buf;
-      scene_file_exists = dae_exists(a_settings.scene_file_path);
+    {
+      ImGui::Separator();
+      static char file_name_buf[char_buf_size];
+      strncpy(file_name_buf, a_settings.scene_file_path.c_str(), char_buf_size);
+      if (ImGui::InputText("Scene File", file_name_buf, char_buf_size)) {
+        a_settings.scene_file_path = file_name_buf;
+        scene_file_exists = dae_exists(a_settings.scene_file_path);
+      }
+
+      ImGui::InputDouble("Lens Radius", &a_settings.pathtracer_lensRadius);
+      ImGui::InputDouble("Focal Distance", &a_settings.pathtracer_focalDistance);
     }
 
-    ImGui::InputDouble("Lens Radius", &a_settings.pathtracer_lensRadius);
-    ImGui::InputDouble("Focal Distance", &a_settings.pathtracer_focalDistance);
-
-    ImGui::Separator();
-    Utils::title_text("Adaptive Sampling");
-    ImGui::InputFloat("Max Tolerance", &a_settings.pathtracer_max_tolerance);
-    ImGui::InputInt(
-        "Samples Per Patch",
-        reinterpret_cast<int *>(&a_settings.pathtracer_samples_per_patch));
 
     {
       ImGui::Separator();
@@ -166,6 +179,7 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
         a_settings.dy = a_settings.h; 
       }
     }
+
     ImGui::Separator();
     ImGui::Checkbox("Render To File", &a_settings.write_to_file);
     static char output_file_name_buf[char_buf_size];
