@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(Assignment3)
 
 #-------------------------------------------------------------------------------
@@ -30,6 +31,14 @@ set(APPLICATION_3_1_SOURCE
     src/pathtracer/camera.cpp
     src/pathtracer/bsdf.cpp
     src/pathtracer/pathtracer.cpp
+
+    # Imgui
+    src/imgui/imgui.cpp
+    src/imgui/imgui_widgets.cpp
+    src/imgui/imgui_draw.cpp
+    src/imgui/imgui_tables.cpp
+    src/imgui/backends/imgui_impl_glfw.cpp
+    src/imgui/backends/imgui_impl_opengl2.cpp
 )
 
 set(APPLICATION_3_2_SOURCE
