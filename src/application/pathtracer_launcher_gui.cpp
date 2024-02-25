@@ -15,6 +15,18 @@ void title_text(const char *text) {
   ImGui::TextColored(COL_CYAN, text);
 }
 
+void HoverNote(const char *text, const char *note = "(?)") {
+  ImGui::SameLine();
+  ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+  ImGui::Text(note);
+  ImGui::PopStyleColor();
+  if (ImGui::IsItemHovered()) {
+    ImGui::BeginTooltip();
+    ImGui::Text(text);
+    ImGui::EndTooltip();
+  }
+}
+
 void region_selector(const float canvas_height, const float width,
                      const float height, int &x, int &y, int &dx, int &dy) {
   static bool is_selecting = false;
@@ -126,8 +138,10 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
     Utils::title_text("Pathtracer Settings");
     ImGui::InputInt("Camera Ray Per Pixel",
                     reinterpret_cast<int *>(&a_settings.pathtracer_ns_aa));
+    Utils::HoverNote("Number of rays to trace, for each pixel in the image.\nShould be a power of 2.");
     ImGui::InputInt("Max Ray Depth", reinterpret_cast<int *>(
                                          &a_settings.pathtracer_max_ray_depth));
+    Utils::HoverNote("Maximum number of bounces for a ray.");
     ImGui::InputInt(
         "Samples Per Area Light",
         reinterpret_cast<int *>(&a_settings.pathtracer_ns_area_light));
@@ -143,6 +157,7 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
 
     ImGui::InputInt("Num Threads", reinterpret_cast<int *>(
                                        &a_settings.pathtracer_num_threads));
+    Utils::HoverNote("Number of threads to use for rendering.\nDepending on your system, you may want to adjust this number to optimize performance.");
     // For pathtracer_envmap, consider providing a file picker or similar method
     // for assignment.
 
@@ -167,14 +182,15 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
     {
       ImGui::Separator();
       Utils::title_text("Window/Output Size");
-      ImGui::InputInt("Window Width", &a_settings.w);
-      ImGui::InputInt("Window Height", &a_settings.h);
+      ImGui::InputInt("Window Width", &a_settings.w); Utils::HoverNote("Width of the output image, in pixels.");
+      ImGui::InputInt("Window Height", &a_settings.h); Utils::HoverNote("Height of the output image, in pixels.");
 
       static bool render_full_window = !a_settings.render_custom_region;
       if (ImGui::RadioButton("Render Full Scene", render_full_window)) {
         render_full_window = true;
         a_settings.render_custom_region = false;
       }
+      Utils::HoverNote("Render the entire scene.");
       ImGui::SameLine();
       if (ImGui::RadioButton("Render Selected Region",
                              a_settings.render_custom_region)) {
@@ -188,6 +204,7 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
           a_settings.dy = a_settings.h;
         }
       }
+      Utils::HoverNote("Render only the selected region below.\nUseful for quickly generating previews and debugging.");
       if (a_settings.render_custom_region) {
         ImGui::Indent(10);
         Utils::region_selector(ImGui::GetWindowSize().y * 0.2, a_settings.w,
@@ -216,6 +233,7 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
         a_settings.scene_file_path = file_name_buf;
         scene_file_exists = dae_exists(a_settings.scene_file_path);
       }
+      Utils::HoverNote("Relative path of the .dae scene file.\n Example: ../dae/sky/CBbunny.dae\nNote that pathing may be different on your system.");
 
       static char output_file_name_buf[char_buf_size];
       strncpy(output_file_name_buf, a_settings.output_file_name.c_str(),
@@ -227,16 +245,20 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
         a_settings.output_file_name = output_file_name_buf;
         output_file_exists = file_exists(a_settings.output_file_name);
       }
+      Utils::HoverNote("Relative path of the .png output file.\n Example: here.png\nPathtracer creates a new file if it does not exist, or overwrites an existing file.");
+
       static bool render_realtime = !a_settings.write_to_file;
-      if (ImGui::RadioButton("Render Realtime", render_realtime)) {
+      if (ImGui::RadioButton("Render In Window", render_realtime)) {
         render_realtime = true;
         a_settings.write_to_file = false;
       }
+      Utils::HoverNote("Render the scene in real time to an interactive window.");
       ImGui::SameLine();
       if (ImGui::RadioButton("Render To File", a_settings.write_to_file)) {
         a_settings.write_to_file = true;
         render_realtime = false;
       }
+      Utils::HoverNote("Save the result of path-tracing to the \"Output File\".");
       if (output_file_exists && a_settings.write_to_file) {
         // yellow warning text
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
