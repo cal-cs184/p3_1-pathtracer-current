@@ -342,6 +342,17 @@ int PathtracerLauncherGUI::draw(GUISettings &a_settings) {
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL2_Init();
 
+  // Set up fonts
+#if WIN32
+  const char* font_path = "";
+#else
+  const char* font_path = "../src/imgui/misc/fonts/DroidSans.ttf";
+#endif
+  ImFont* font = io.Fonts->AddFontFromFileTTF(font_path, 18);
+  if (font && font->IsLoaded()) {
+    ImGui::PushFont(font);
+  }
+
   // Enter the render loop
   render_loop(window, a_settings);
 
