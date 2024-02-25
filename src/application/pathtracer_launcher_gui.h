@@ -5,6 +5,11 @@
 #include <string>
 #include <sys/stat.h>
 namespace PathtracerLauncherGUI {
+/**
+ * @brief Container for all settings tweakable from the GUI. The GUI settings are then read by the 
+ * main application and used to configure the pathtracer.
+ * The settings can be serialized via serialize() and deserialize().
+ */
 struct GUISettings {
   GUISettings() {
     pathtracer_ns_aa = 1;
