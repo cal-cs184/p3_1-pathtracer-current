@@ -40,7 +40,8 @@ void region_selector(const float canvas_height, const float width,
 
   // Invisible button to capture mouse inputs over the area
   ImGui::InvisibleButton("canvas", canvas_size);
-  if (ImGui::IsItemHovered()) {
+  bool is_hovering = ImGui::IsItemHovered();
+  if (is_hovering) {
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
       is_selecting = true;
       start_pos = ImGui::GetMousePos();
@@ -57,7 +58,8 @@ void region_selector(const float canvas_height, const float width,
     }
   }
 
-  const ImU32 col = IM_COL32(255, 255, 0, 255); // Yellow color for selection
+  // geforce green
+  const ImU32 col = IM_COL32(0, 255, 0, 255);
   // Draw the selection rectangle
   if (first_draw) {
     start_pos = x < 0 ? canvas_pos
@@ -72,7 +74,7 @@ void region_selector(const float canvas_height, const float width,
   }
 
   // Calculating and displaying the region
-  if (!is_selecting && (start_pos.x != end_pos.x && start_pos.y != end_pos.y)) {
+  if (!is_selecting && is_hovering && (start_pos.x != end_pos.x && start_pos.y != end_pos.y)) {
     x = static_cast<int>((start_pos.x - canvas_pos.x) / scale_factor);
     y = static_cast<int>((start_pos.y - canvas_pos.y) / scale_factor);
     dx = static_cast<int>((end_pos.x - start_pos.x) / scale_factor);
@@ -92,8 +94,8 @@ void region_selector(const float canvas_height, const float width,
   // flip y along the center
   y = height - y - dy;
 
-  ImGui::Text("Region X, Y: (%i, %i)", x, y);
-  ImGui::Text("Region dx, dy: (%i, %i)", dx, dy);
+  //ImGui::Text("Region X, Y: (%i, %i)", x, y);
+  //ImGui::Text("Region dx, dy: (%i, %i)", dx, dy);
   first_draw = false;
 }
 
@@ -169,12 +171,12 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
       ImGui::InputInt("Window Height", &a_settings.h);
 
       static bool render_full_window = !a_settings.render_custom_region;
-      if (ImGui::RadioButton("Render Full Window", render_full_window)) {
+      if (ImGui::RadioButton("Render Full Scene", render_full_window)) {
         render_full_window = true;
         a_settings.render_custom_region = false;
       }
       ImGui::SameLine();
-      if (ImGui::RadioButton("Render Custom Region",
+      if (ImGui::RadioButton("Render Selected Region",
                              a_settings.render_custom_region)) {
         a_settings.render_custom_region = true;
         render_full_window = false;
@@ -187,14 +189,16 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
         }
       }
       if (a_settings.render_custom_region) {
+        ImGui::Indent(10);
         Utils::region_selector(ImGui::GetWindowSize().y * 0.2, a_settings.w,
-                               a_settings.h, a_settings.x, a_settings.y,
-                               a_settings.dx, a_settings.dy);
+                              a_settings.h, a_settings.x, a_settings.y,
+                              a_settings.dx, a_settings.dy);
         if (!a_settings.write_to_file) {
           ImGui::TextColored(
               ImVec4(1.0f, 1.0f, 0.0f, 1.0f),
               "Custom region rendering requires writing to file.");
         }
+        ImGui::Unindent(10);
       } else {
         a_settings.x = -1; // ugh
         a_settings.y = 0;
@@ -243,6 +247,7 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
     }
 
     { // Launch button
+      ImGui::Separator();
       ImVec2 winsize = ImGui::GetWindowSize();
       bool can_launch =
           scene_file_exists &&
@@ -252,11 +257,17 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
         ImGui::PushStyleVar(ImGuiStyleVar_Alpha,
                             ImGui::GetStyle().Alpha * 0.5f);
       }
+      // dark green
+      ImVec4 button_color = ImVec4(0.0f, 0.5f, 0.0f, 1.0f);
+      ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
+      ImGui::PushStyleColor(ImGuiCol_Button, button_color);
       if (ImGui::Button("Launch!", ImVec2(winsize.x / 5, winsize.y / 10))) {
         a_settings.serialize("settings.txt");
         glfwSetWindowShouldClose(a_window, 1);
         exit_program_after_loop = false;
       }
+      ImGui::PopStyleColor();
+      ImGui::PopStyleVar();
       if (!can_launch) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
         if (!scene_file_exists) {
