@@ -78,10 +78,9 @@ void region_selector(const float canvas_height, const float width, const float h
           y += dy;
           dy = -dy;
         }
-        ImGui::Text("Region X, Y: (%i, %i)", x, y);
-        ImGui::Text("Region dx, dy: (%i, %i)", dx, dy);
     }
-    
+    ImGui::Text("Region X, Y: (%i, %i)", x, y);
+    ImGui::Text("Region dx, dy: (%i, %i)", dx, dy);
     first_draw = false;
 }
 
@@ -143,13 +142,7 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
     static bool scene_file_exists = dae_exists(a_settings.scene_file_path);
     {
       ImGui::Separator();
-      static char file_name_buf[char_buf_size];
-      strncpy(file_name_buf, a_settings.scene_file_path.c_str(), char_buf_size);
-      if (ImGui::InputText("Scene File", file_name_buf, char_buf_size)) {
-        a_settings.scene_file_path = file_name_buf;
-        scene_file_exists = dae_exists(a_settings.scene_file_path);
-      }
-
+      Utils::title_text("Camera Settings");
       ImGui::InputDouble("Lens Radius", &a_settings.pathtracer_lensRadius);
       ImGui::InputDouble("Focal Distance", &a_settings.pathtracer_focalDistance);
     }
@@ -161,7 +154,15 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
       ImGui::InputInt("Window Width", &a_settings.w);
       ImGui::InputInt("Window Height", &a_settings.h);
 
-      if (ImGui::Checkbox("Render Custom Region", &a_settings.render_custom_region)) {
+      static bool render_full_window = !a_settings.render_custom_region;
+      if (ImGui::RadioButton("Render Full Window", render_full_window)) {
+        render_full_window = true;
+        a_settings.render_custom_region = false;
+      }
+      ImGui::SameLine();
+      if (ImGui::RadioButton("Render Custom Region", a_settings.render_custom_region)) {
+        a_settings.render_custom_region = true;
+        render_full_window = false;
         if (a_settings.render_custom_region) { // flipped from false to true
           // default to full size region
           a_settings.x = 0;
@@ -172,6 +173,9 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
       }
       if (a_settings.render_custom_region) {
         Utils::region_selector(ImGui::GetWindowSize().y * 0.2, a_settings.w, a_settings.h, a_settings.x, a_settings.y, a_settings.dx, a_settings.dy);
+        if (!a_settings.write_to_file) {
+          ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Custom region rendering requires writing to file.");
+        }
       } else {
         a_settings.x = -1; // ugh
         a_settings.y = 0;
@@ -180,8 +184,16 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
       }
     }
 
+    { // file selection
     ImGui::Separator();
-    ImGui::Checkbox("Render To File", &a_settings.write_to_file);
+    Utils::title_text("File Selection");
+    static char file_name_buf[char_buf_size];
+    strncpy(file_name_buf, a_settings.scene_file_path.c_str(), char_buf_size);
+    if (ImGui::InputText("Scene File", file_name_buf, char_buf_size)) {
+      a_settings.scene_file_path = file_name_buf;
+      scene_file_exists = dae_exists(a_settings.scene_file_path);
+    }
+
     static char output_file_name_buf[char_buf_size];
     strncpy(output_file_name_buf, a_settings.output_file_name.c_str(),
             char_buf_size);
@@ -191,13 +203,23 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
       a_settings.output_file_name = output_file_name_buf;
       output_file_exists = file_exists(a_settings.output_file_name);
     }
-
+    static bool render_realtime = !a_settings.write_to_file;
+    if (ImGui::RadioButton("Render Realtime", render_realtime)) {
+      render_realtime = true;
+      a_settings.write_to_file = false;
+    }
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Render To File", a_settings.write_to_file)) {
+      a_settings.write_to_file = true;
+      render_realtime = false;
+    }
     if (output_file_exists && a_settings.write_to_file) {
       // yellow warning text
       ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
       ImGui::Text("%s already exists, will be overwritten.",
                   a_settings.output_file_name.c_str());
       ImGui::PopStyleColor();
+    }
     }
 
     { // Launch button
@@ -210,7 +232,7 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
         ImGui::PushStyleVar(ImGuiStyleVar_Alpha,
                             ImGui::GetStyle().Alpha * 0.5f);
       }
-      if (ImGui::Button("Launch", ImVec2(winsize.x / 5, winsize.y / 10))) {
+      if (ImGui::Button("Launch!", ImVec2(winsize.x / 5, winsize.y / 10))) {
         a_settings.serialize("settings.txt");
         glfwSetWindowShouldClose(a_window, 1);
         exit_program_after_loop = false;
