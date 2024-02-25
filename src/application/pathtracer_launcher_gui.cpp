@@ -62,9 +62,9 @@ void region_selector(const float canvas_height, const float width,
   if (first_draw) {
     start_pos = x < 0 ? canvas_pos
                       : ImVec2(x * scale_factor + canvas_pos.x,
-                               y * scale_factor + canvas_pos.y);
+                               (height - y - dy)* scale_factor + canvas_pos.y);
     end_pos = ImVec2((x + dx) * scale_factor + canvas_pos.x,
-                     (y + dy) * scale_factor + canvas_pos.y);
+                     (height - y) * scale_factor + canvas_pos.y);
   }
   if (is_selecting || (start_pos.x != end_pos.x && start_pos.y != end_pos.y) ||
       first_draw) {
@@ -88,6 +88,10 @@ void region_selector(const float canvas_height, const float width,
       dy = -dy;
     }
   }
+
+  // flip y along the center
+  y = height - y - dy;
+
   ImGui::Text("Region X, Y: (%i, %i)", x, y);
   ImGui::Text("Region dx, dy: (%i, %i)", dx, dy);
   first_draw = false;
