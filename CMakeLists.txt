@@ -39,6 +39,8 @@ set(APPLICATION_3_1_SOURCE
     src/imgui/imgui_tables.cpp
     src/imgui/backends/imgui_impl_glfw.cpp
     src/imgui/backends/imgui_impl_opengl2.cpp
+
+    src/application/pathtracer_launcher_gui.cpp
 )
 
 set(APPLICATION_3_2_SOURCE
