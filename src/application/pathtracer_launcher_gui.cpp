@@ -5,6 +5,77 @@
 #include "imgui_internal.h"
 #include <fstream>
 #include <limits>
+namespace Utils{
+bool is_selecting = false;
+
+ImVec2 start_pos, end_pos;
+
+void title_text(const char* text) {
+    const ImVec4 COL_CYAN = ImVec4(0.0f, 1.0f, 1.0f, 1.0f);
+    ImGui::TextColored(COL_CYAN, text);
+}
+
+void region_selector(const float canvas_height, const float width, const float height, int& x, int& y, int& dx, int& dy) {
+    static bool is_selecting = false;
+    static ImVec2 start_pos, end_pos;
+    static bool first_draw = true;
+    // Setup for the region selector area
+    ImVec2 canvas_pos = ImGui::GetCursorScreenPos(); // Top-left
+    ImVec2 canvas_size = ImVec2(width, height); // Original size
+    
+    // Calculate scale factor
+    float scale_factor = canvas_height / canvas_size.y;
+    
+    // Scale the canvas size to fit the fixed height
+    canvas_size.x = canvas_size.x * scale_factor;
+    canvas_size.y = canvas_height;
+
+    // Draw background for the region selector
+    const ImU32 background_col = IM_COL32(70, 70, 70, 255); // Dark gray color
+    ImGui::GetWindowDrawList()->AddRectFilled(canvas_pos, ImVec2(canvas_pos.x + canvas_size.x, canvas_pos.y + canvas_size.y), background_col);
+
+    // Invisible button to capture mouse inputs over the area
+    ImGui::InvisibleButton("canvas", canvas_size);
+    if (ImGui::IsItemHovered()) {
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+            is_selecting = true;
+            start_pos = ImGui::GetMousePos();
+            end_pos = start_pos; // Initialize endPos to startPos to avoid initial jump
+        }
+        if (is_selecting) {
+            if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                end_pos = ImGui::GetMousePos();
+            }
+        }
+        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+            is_selecting = false;
+        }
+    }
+
+    const ImU32 col = IM_COL32(255, 255, 0, 255); // Yellow color for selection
+    // Draw the selection rectangle
+    if (first_draw) {
+      start_pos = x < 0 ? canvas_pos : ImVec2(x * scale_factor + canvas_pos.x, y * scale_factor + canvas_pos.y);
+      end_pos = ImVec2((x + dx) * scale_factor + canvas_pos.x, (y + dy) * scale_factor + canvas_pos.y);
+    }
+    if (is_selecting || (start_pos.x != end_pos.x && start_pos.y != end_pos.y) || first_draw) {
+        ImGui::GetWindowDrawList()->AddRect(start_pos, end_pos, col);
+    }
+
+    // Calculating and displaying the region
+    if (!is_selecting && (start_pos.x != end_pos.x && start_pos.y != end_pos.y)) {
+        x = static_cast<int>((start_pos.x - canvas_pos.x) / scale_factor);
+        y = static_cast<int>((start_pos.y - canvas_pos.y) / scale_factor);
+        dx = static_cast<int>((end_pos.x - start_pos.x) / scale_factor);
+        dy = static_cast<int>((end_pos.y - start_pos.y) / scale_factor);
+        ImGui::Text("Region X, Y: (%i, %i)", x, y);
+        ImGui::Text("Region dx, dy: (%i, %i)", dx, dy);
+    }
+    
+    first_draw = false;
+}
+
+}
 void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
                                         GUISettings &a_settings) {
   static bool exit_program_after_loop = true;
@@ -27,13 +98,13 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
                      ImGuiWindowFlags_NoScrollbar |
                      ImGuiWindowFlags_NoScrollWithMouse);
 
-    ImGui::Text("Pathtracer Settings");
+    Utils::title_text("Pathtracer Settings");
     ImGui::InputInt("Camera Ray Per Pixel",
                     reinterpret_cast<int *>(&a_settings.pathtracer_ns_aa));
     ImGui::InputInt("Max Ray Depth", reinterpret_cast<int *>(
                                          &a_settings.pathtracer_max_ray_depth));
     ImGui::InputInt(
-        "# Samples Per Area Light",
+        "Samples Per Area Light",
         reinterpret_cast<int *>(&a_settings.pathtracer_ns_area_light));
     ImGui::Checkbox("Use Hemisphere Sampling For Direct Lighting",
                     &a_settings.pathtracer_direct_hemisphere_sample);
@@ -65,17 +136,36 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
     ImGui::InputDouble("Focal Distance", &a_settings.pathtracer_focalDistance);
 
     ImGui::Separator();
-    ImGui::Text("Adaptive Sampling");
+    Utils::title_text("Adaptive Sampling");
     ImGui::InputFloat("Max Tolerance", &a_settings.pathtracer_max_tolerance);
     ImGui::InputInt(
         "Samples Per Patch",
         reinterpret_cast<int *>(&a_settings.pathtracer_samples_per_patch));
 
-    ImGui::Separator();
-    ImGui::Text("Window Sizing");
-    ImGui::InputInt("Window Width", &a_settings.w);
+    {
+      ImGui::Separator();
+      Utils::title_text("Window/Output Size");
+      ImGui::InputInt("Window Width", &a_settings.w);
+      ImGui::InputInt("Window Height", &a_settings.h);
 
-    ImGui::InputInt("Window Height", &a_settings.h);
+      if (ImGui::Checkbox("Render Custom Region", &a_settings.render_custom_region)) {
+        if (a_settings.render_custom_region) { // flipped from false to true
+          // default to full size region
+          a_settings.x = 0;
+          a_settings.y = 0;
+          a_settings.dx = a_settings.w;
+          a_settings.dy = a_settings.h;
+        }
+      }
+      if (a_settings.render_custom_region) {
+        Utils::region_selector(ImGui::GetWindowSize().y * 0.2, a_settings.w, a_settings.h, a_settings.x, a_settings.y, a_settings.dx, a_settings.dy);
+      } else {
+        a_settings.x = -1; // ugh
+        a_settings.y = 0;
+        a_settings.dx = a_settings.w;
+        a_settings.dy = a_settings.h; 
+      }
+    }
     ImGui::Separator();
     ImGui::Checkbox("Render To File", &a_settings.write_to_file);
     static char output_file_name_buf[char_buf_size];
@@ -147,7 +237,7 @@ int PathtracerLauncherGUI::draw(GUISettings &a_settings) {
 
   // Create a GLFW window
   GLFWwindow *window =
-      glfwCreateWindow(640, 480, "Pathtracer Launcher", NULL, NULL);
+      glfwCreateWindow(640, 800, "Pathtracer Launcher", NULL, NULL);
   if (!window) {
     glfwTerminate();
     return -1;
@@ -206,6 +296,7 @@ void PathtracerLauncherGUI::GUISettings::serialize(const std::string &a_file_pat
 
   // Serialize additional settings
   file << write_to_file << "\n";
+  file << render_custom_region << "\n";
   file << w << "\n";
   file << h << "\n";
   file << x << "\n";
@@ -243,6 +334,7 @@ void PathtracerLauncherGUI::GUISettings::deserialize(const std::string &a_file_p
 
   // Deserialize additional settings
   file >> write_to_file;
+  file >> render_custom_region;
   file >> w;
   file >> h;
   file >> x;

@@ -1,5 +1,6 @@
 #pragma once
 #include "GLFW/glfw3.h"
+#include <cstddef>
 #include <cstring>
 #include <string>
 #include <sys/stat.h>
@@ -41,14 +42,16 @@ struct GUISettings {
   float pathtracer_max_tolerance;
   size_t pathtracer_samples_per_patch;
 
+
   bool pathtracer_direct_hemisphere_sample;
+  bool render_custom_region = false;
 
   double pathtracer_lensRadius;
   double pathtracer_focalDistance;
 
   // settings but not for the app.
   bool write_to_file = false;
-  int w = 0, h = 0, x = -1, y = 0, dx = 0, dy = 0;
+  int w = 1024, h = 768, x = -1, y = 0, dx = 0, dy = 0;
   std::string output_file_name, cam_settings = "";
   std::string scene_file_path = "";
 };
