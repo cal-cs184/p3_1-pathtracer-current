@@ -274,36 +274,46 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
       bool can_launch =
           scene_file_exists &&
           (!a_settings.write_to_file || !a_settings.output_file_name.empty());
-      ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !can_launch);
-      if (!can_launch) {
-        ImGui::PushStyleVar(ImGuiStyleVar_Alpha,
-                            ImGui::GetStyle().Alpha * 0.5f);
-      }
-      // dark green
-      ImVec4 button_color = ImVec4(0.0f, 0.5f, 0.0f, 1.0f);
-      ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
-      ImGui::PushStyleColor(ImGuiCol_Button, button_color);
-      if (ImGui::Button("Launch!", ImVec2(winsize.x / 5, winsize.y / 10))) {
-        a_settings.serialize("settings.txt");
-        glfwSetWindowShouldClose(a_window, 1);
-        exit_program_after_loop = false;
-      }
-      ImGui::PopStyleColor();
-      ImGui::PopStyleVar();
-      if (!can_launch) {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-        if (!scene_file_exists) {
-          ImGui::Text(
-              "Scene file does not exist. Please provide a valid scene file.");
-        }
-        if (a_settings.write_to_file && a_settings.output_file_name.empty()) {
-          ImGui::Text("Output file empty. Please specify output file name when "
+
+      // text warnings
+      {
+          if (!can_launch) {
+              ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+              if (!scene_file_exists) {
+                  ImGui::Text(
+                      "Scene file does not exist. Please provide a valid scene file.");
+              }
+              if (a_settings.write_to_file && a_settings.output_file_name.empty()) {
+                  ImGui::Text("Output file empty. Please specify output file name when "
                       "rendering to file.");
-        }
-        ImGui::PopStyleColor();
-        ImGui::PopItemFlag();
-        ImGui::PopStyleVar();
+              }
+			  ImGui::PopStyleColor();
+          }
       }
+
+      { // actual launch button
+          if (!can_launch) {
+              ImGui::PushStyleVar(ImGuiStyleVar_Alpha,
+                  ImGui::GetStyle().Alpha * 0.5f);
+          }
+          ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !can_launch);
+          // dark green
+          ImVec4 button_color = ImVec4(0.0f, 0.5f, 0.0f, 1.0f);
+          ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
+          ImGui::PushStyleColor(ImGuiCol_Button, button_color);
+          if (ImGui::Button("Launch!", ImVec2(winsize.x / 5, winsize.y / 10))) {
+              a_settings.serialize("settings.txt");
+              glfwSetWindowShouldClose(a_window, 1);
+              exit_program_after_loop = false;
+          }
+          if (!can_launch) {
+              ImGui::PopStyleVar();
+              ImGui::PopItemFlag();
+          }
+          ImGui::PopStyleColor();
+          ImGui::PopStyleVar();
+      }
+
     }
     ImGui::End();
 
@@ -344,7 +354,7 @@ int PathtracerLauncherGUI::draw(GUISettings &a_settings) {
 
   // Set up fonts
 #if WIN32
-  const char* font_path = "";
+  const char* font_path = "../../../src/imgui/misc/fonts/DroidSans.ttf";
 #else
   const char* font_path = "../src/imgui/misc/fonts/DroidSans.ttf";
 #endif
