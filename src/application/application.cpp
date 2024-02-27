@@ -23,7 +23,7 @@ Application::Application(AppConfig config, bool gl) {
   renderer = new RaytracedRenderer (
     config.pathtracer_ns_aa,
     config.pathtracer_max_ray_depth,
-    config.pathtracer_accumBounces,
+    config.pathtracer_accumulate_bounces,
     config.pathtracer_ns_area_light,
     config.pathtracer_ns_diff,
     config.pathtracer_ns_glsy,

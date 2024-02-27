@@ -120,6 +120,7 @@ int main(int argc, char **argv) {
       config.pathtracer_num_threads = settings.pathtracer_num_threads;
       config.pathtracer_samples_per_patch =
           settings.pathtracer_samples_per_patch;
+      config.pathtracer_accumulate_bounces = settings.pathtracer_accumulate_bounces;
     }
   } else {
     while ((opt = getopt(argc, argv, "s:l:t:m:o:e:h:H:f:r:c:b:d:a:p:")) !=
@@ -154,7 +155,7 @@ int main(int argc, char **argv) {
         config.pathtracer_max_ray_depth = atoi(optarg);
         break;
       case 'o':
-        config.pathtracer_accumBounces = atoi(optarg) > 0;
+        config.pathtracer_accumulate_bounces = atoi(optarg) > 0;
         break;
       case 'e':
         std::cout << "[PathTracer] Loading environment map " << optarg

@@ -1,4 +1,5 @@
 #include "pathtracer_launcher_gui.h"
+#include "GLFW/glfw3.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl2.h"
@@ -131,33 +132,44 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
 
     // Begin the ImGui window
     ImGui::Begin("Pathtracer Settings", nullptr,
-                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
-                     ImGuiWindowFlags_NoScrollbar |
-                     ImGuiWindowFlags_NoScrollWithMouse);
+                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
 
-    Utils::title_text("Pathtracer Settings");
-    ImGui::InputInt("Camera Ray Per Pixel",
-                    reinterpret_cast<int *>(&a_settings.pathtracer_ns_aa));
-    Utils::HoverNote("Number of rays to trace, for each pixel in the image.\nShould be a power of 2.");
-    ImGui::InputInt("Max Ray Depth", reinterpret_cast<int *>(
-                                         &a_settings.pathtracer_max_ray_depth));
-    Utils::HoverNote("Maximum number of bounces for a ray.");
-    ImGui::InputInt(
-        "Samples Per Area Light",
-        reinterpret_cast<int *>(&a_settings.pathtracer_ns_area_light));
-    ImGui::Checkbox("Use Hemisphere Sampling For Direct Lighting",
-                    &a_settings.pathtracer_direct_hemisphere_sample);
-    // the following are not configurable by students
-    // ImGui::InputInt("NS Diff",
-    //                reinterpret_cast<int *>(&a_config.pathtracer_ns_diff));
-    // ImGui::InputInt("NS Glsy",
-    //                reinterpret_cast<int *>(&a_config.pathtracer_ns_glsy));
-    // ImGui::InputInt("NS Refr",
-    //                reinterpret_cast<int *>(&a_config.pathtracer_ns_refr));
+    {
+      Utils::title_text("Pathtracer Settings");
+      ImGui::InputInt("Camera Ray Per Pixel",
+                      reinterpret_cast<int *>(&a_settings.pathtracer_ns_aa));
+      Utils::HoverNote("Number of rays to trace, for each pixel in the image.\nShould be a power of 2.");
+      ImGui::InputInt("Max Ray Depth", reinterpret_cast<int *>(
+                                          &a_settings.pathtracer_max_ray_depth));
+      Utils::HoverNote("Maximum number of bounces for a ray.");
+      ImGui::InputInt(
+          "Samples Per Area Light",
+          reinterpret_cast<int *>(&a_settings.pathtracer_ns_area_light));
+      bool trace_final_bounce = !a_settings.pathtracer_accumulate_bounces;
+      if (ImGui::RadioButton("Accumulate Light Bounces", a_settings.pathtracer_accumulate_bounces)) {
+        a_settings.pathtracer_accumulate_bounces = true;
+      }
+      Utils::HoverNote("Accumualte bounces of light when performing the path-tracing algorithm.");
+      ImGui::SameLine();
+      if (ImGui::RadioButton("Trace Final Bounce Only", trace_final_bounce)) {
+        a_settings.pathtracer_accumulate_bounces = false;
+      }
+      Utils::HoverNote("Trace and show only the final bounce of light when performing the path-tracing algorithm.");
+      ImGui::Checkbox("Use Hemisphere Sampling For Direct Lighting",
+                      &a_settings.pathtracer_direct_hemisphere_sample);
 
-    ImGui::InputInt("Num Threads", reinterpret_cast<int *>(
-                                       &a_settings.pathtracer_num_threads));
-    Utils::HoverNote("Number of threads to use for rendering.\nDepending on your system, you may want to adjust this number to optimize performance.");
+      // the following are not configurable by students
+      // ImGui::InputInt("NS Diff",
+      //                reinterpret_cast<int *>(&a_config.pathtracer_ns_diff));
+      // ImGui::InputInt("NS Glsy",
+      //                reinterpret_cast<int *>(&a_config.pathtracer_ns_glsy));
+      // ImGui::InputInt("NS Refr",
+      //                reinterpret_cast<int *>(&a_config.pathtracer_ns_refr));
+
+      ImGui::InputInt("Num Threads", reinterpret_cast<int *>(
+                                        &a_settings.pathtracer_num_threads));
+      Utils::HoverNote("Number of threads to use for rendering.\nDepending on your system, you may want to adjust this number to optimize performance.");
+    }
     // For pathtracer_envmap, consider providing a file picker or similar method
     // for assignment.
 
@@ -258,7 +270,7 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
         a_settings.write_to_file = true;
         render_realtime = false;
       }
-      Utils::HoverNote("Save the result of path-tracing to the \"Output File\".");
+      Utils::HoverNote("Save the result of path-tracing to the png file specified by \"Output File\".");
       if (output_file_exists && a_settings.write_to_file) {
         // yellow warning text
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
@@ -336,7 +348,7 @@ int PathtracerLauncherGUI::draw(GUISettings &a_settings) {
 
   // Create a GLFW window
   GLFWwindow *window =
-      glfwCreateWindow(640, 800, "Pathtracer Launcher", NULL, NULL);
+      glfwCreateWindow(a_settings.settings_window_width,a_settings.settings_window_height, "Pathtracer Launcher", NULL, NULL);
   if (!window) {
     glfwTerminate();
     return -1;
@@ -344,6 +356,14 @@ int PathtracerLauncherGUI::draw(GUISettings &a_settings) {
 
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1); // Enable vsync
+  
+  glfwSetWindowUserPointer(window, &a_settings); // NOTE: very dirty hack, but i have a MT tmr smh
+  glfwSetFramebufferSizeCallback(window, [](GLFWwindow *window, int width,
+                                           int height) { 
+    GUISettings *settings = (GUISettings *)glfwGetWindowUserPointer(window);
+    settings->settings_window_width = width;
+    settings->settings_window_height = height;
+  });
 
   // Initialize ImGui
   IMGUI_CHECKVERSION();
@@ -408,6 +428,7 @@ void PathtracerLauncherGUI::GUISettings::serialize(
   // Serialize additional settings
   file << write_to_file << "\n";
   file << render_custom_region << "\n";
+  file << pathtracer_accumulate_bounces << "\n";
   file << w << "\n";
   file << h << "\n";
   file << x << "\n";
@@ -417,6 +438,9 @@ void PathtracerLauncherGUI::GUISettings::serialize(
   file << output_file_name << "\n";
   file << cam_settings << "\n";
   file << scene_file_path << "\n";
+
+  file << settings_window_width << "\n";
+  file << settings_window_height << "\n";
 
   file.close();
 }
@@ -447,6 +471,7 @@ void PathtracerLauncherGUI::GUISettings::deserialize(
   // Deserialize additional settings
   file >> write_to_file;
   file >> render_custom_region;
+  file >> pathtracer_accumulate_bounces;
   file >> w;
   file >> h;
   file >> x;
@@ -458,6 +483,9 @@ void PathtracerLauncherGUI::GUISettings::deserialize(
   std::getline(file, output_file_name);
   std::getline(file, cam_settings);
   std::getline(file, scene_file_path);
+
+  file >> settings_window_width;
+  file >> settings_window_height;
 
   file.close();
 }

@@ -50,9 +50,12 @@ struct GUISettings {
 
   bool pathtracer_direct_hemisphere_sample;
   bool render_custom_region = false;
-
+  bool pathtracer_accumulate_bounces = true;
   double pathtracer_lensRadius;
   double pathtracer_focalDistance;
+
+  size_t settings_window_width = 600;
+  size_t settings_window_height = 800;
 
   // settings but not for the app.
   bool write_to_file = false;
