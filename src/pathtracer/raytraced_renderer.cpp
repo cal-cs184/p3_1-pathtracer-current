@@ -38,7 +38,7 @@ namespace CGL {
  * -> DONE: completed rendering a scene.
  */
 RaytracedRenderer::RaytracedRenderer(size_t ns_aa,
-                       size_t max_ray_depth, size_t ns_area_light,
+                       size_t max_ray_depth, bool isAccumBounces, size_t ns_area_light,
                        size_t ns_diff, size_t ns_glsy, size_t ns_refr,
                        size_t num_threads,
                        size_t samples_per_batch,
@@ -54,6 +54,7 @@ RaytracedRenderer::RaytracedRenderer(size_t ns_aa,
 
   pt->ns_aa = ns_aa;                                        // Number of samples per pixel
   pt->max_ray_depth = max_ray_depth;                        // Maximum recursion ray depth
+  pt->isAccumBounces = isAccumBounces;                      // Accumulate Bounces Along Path
   pt->ns_area_light = ns_area_light;                        // Number of samples for area light
   pt->ns_diff = ns_diff;                                    // Number of samples for diffuse surface
   pt->ns_glsy = ns_diff;                                    // Number of samples for glossy surface

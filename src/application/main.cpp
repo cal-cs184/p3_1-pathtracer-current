@@ -29,6 +29,7 @@ void usage(const char *binaryName) {
   printf("  -l  <INT>        Number of samples per area light\n");
   printf("  -t  <INT>        Number of render threads\n");
   printf("  -m  <INT>        Maximum ray depth\n");
+  printf("  -o  <INT>        Accumulate Bounces of Light \n");
   printf("  -e  <PATH>       Path to environment map\n");
   printf("  -b  <FLOAT>      The size of the aperture\n");
   printf("  -d  <FLOAT>      The focal distance\n");
@@ -121,7 +122,7 @@ int main(int argc, char **argv) {
           settings.pathtracer_samples_per_patch;
     }
   } else {
-    while ((opt = getopt(argc, argv, "s:l:t:m:e:h:H:f:r:c:b:d:a:p:")) !=
+    while ((opt = getopt(argc, argv, "s:l:t:m:o:e:h:H:f:r:c:b:d:a:p:")) !=
            -1) { // for each option...
       switch (opt) {
       case 'f':
@@ -151,6 +152,9 @@ int main(int argc, char **argv) {
         break;
       case 'm':
         config.pathtracer_max_ray_depth = atoi(optarg);
+        break;
+      case 'o':
+        config.pathtracer_accumBounces = atoi(optarg) > 0;
         break;
       case 'e':
         std::cout << "[PathTracer] Loading environment map " << optarg
