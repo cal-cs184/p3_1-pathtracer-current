@@ -314,7 +314,6 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
           ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
           ImGui::PushStyleColor(ImGuiCol_Button, button_color);
           if (ImGui::Button("Launch!", ImVec2(winsize.x / 5, winsize.y / 10))) {
-              a_settings.serialize("settings.txt");
               glfwSetWindowShouldClose(a_window, 1);
               exit_program_after_loop = false;
           }
@@ -337,6 +336,7 @@ void PathtracerLauncherGUI::render_loop(GLFWwindow *a_window,
 
     glfwSwapBuffers(a_window);
   }
+  a_settings.serialize("settings.txt"); // before exiting, save the settings
   if (exit_program_after_loop) {
     exit(0); // do not launch the pathtracer.
   }
