@@ -40,6 +40,17 @@ inline Vector3D spectrum_from_string ( string Vector3D_string ) {
 
 }
 
+inline float value_from_string ( string float_string ) {
+
+  float s;
+
+  stringstream ss (float_string);
+  ss >> s;
+
+  return s;
+
+}
+
 inline Color color_from_string ( string color_string ) {
 
   Color c;
@@ -484,12 +495,33 @@ void ColladaParser::parse_light( XMLElement* xml, LightInfo& light ) {
   XMLElement* technique = NULL;
   XMLElement* technique_common = get_technique_common(xml);
   XMLElement* technique_CGL = get_technique_CGL(xml);
-
   technique = technique_CGL ? technique_CGL : technique_common;
+  // or, get blender technique 
+  XMLElement* technique_blender = get_element(xml, "extra/technique");
+  if ((string) technique_blender->Attribute("profile") == "blender") {
+    // technique = technique_blender;
+    light.light_type = LightType::AREA;
+    // spot = 6291457
+    float energy = value_from_string(get_element(xml, "extra/technique/energy")->GetText());
+    light.spectrum = Vector3D(
+      value_from_string(get_element(xml, "extra/technique/red")->GetText()) * energy,
+      value_from_string(get_element(xml, "extra/technique/green")->GetText()) * energy,
+      value_from_string(get_element(xml, "extra/technique/blue")->GetText()) * energy
+    );
+
+    // print summary
+    stat("  |- " << light);
+    return;
+    // return;
+  }
+
+
+  
   if (!technique) {
     stat("Error: No supported profile defined in light: " << light.id);
     exit(EXIT_FAILURE);
   }
+  
 
   // light parameters
   XMLElement* e_light = technique->FirstChildElement();
@@ -530,6 +562,7 @@ void ColladaParser::parse_light( XMLElement* xml, LightInfo& light ) {
         exit(EXIT_FAILURE);
       }
     } else if (type == "point") {
+      
       light.light_type = LightType::POINT;
       XMLElement* e_color = get_element(e_light, "color");
       XMLElement* e_constant_att = get_element(e_light, "constant_attenuation");
@@ -541,6 +574,7 @@ void ColladaParser::parse_light( XMLElement* xml, LightInfo& light ) {
         light.constant_att = atof(e_constant_att->GetText());
         light.constant_att = atof(e_linear_att->GetText());
         light.constant_att = atof(e_quadratic_att->GetText());
+        
       } else {
         stat("Error: incomplete definition of point light: " << light.id);
         exit(EXIT_FAILURE);
@@ -845,6 +879,169 @@ void ColladaParser::parse_polymesh(XMLElement* xml, PolymeshInfo& polymesh) {
       }
     }
 
+  } else {
+    e_polylist = e_mesh->FirstChildElement("triangles");
+    if (e_polylist) {
+
+      // input arrays & array offsets
+      bool has_vertex_array   = false; size_t vertex_offset   = 0;
+      bool has_normal_array   = false; size_t normal_offset   = 0;
+      bool has_texcoord_array = false; size_t texcoord_offset = 0;
+
+      // input arr_sources
+      XMLElement* e_input = e_polylist->FirstChildElement("input");
+      while (e_input) {
+
+        string semantic = e_input->Attribute("semantic");
+        string source   = e_input->Attribute("source") + 1;
+        size_t offset   = e_input->IntAttribute("offset");
+
+        // vertex array source
+        if (semantic == "VERTEX") {
+
+          has_vertex_array = true;
+          vertex_offset = offset;
+
+          if (source == vertices_id) {
+            polymesh.vertices.resize(vertices.size());
+            copy(vertices.begin(), vertices.end(), polymesh.vertices.begin());
+          } else {
+            stat("Error: undefined source for VERTEX semantic: " << source);
+            exit(EXIT_FAILURE);
+          }
+        }
+
+        // normal array source
+        if (semantic == "NORMAL") {
+
+          has_normal_array = true;
+          normal_offset = offset;
+
+          if (arr_sources.find(source) != arr_sources.end()) {
+            vector<float>& floats = arr_sources[source];
+            size_t num_floats = floats.size();
+            for (size_t i = 0; i < num_floats; i += 3) {
+              Vector3D n = Vector3D(floats[i], floats[i+1], floats[i+2]);
+              polymesh.normals.push_back(n);
+            }
+          } else {
+            stat("Error: undefined source for NORMAL semantic: " << source);
+            exit(EXIT_FAILURE);
+          }
+        }
+
+        // texcoord array source
+        if (semantic == "TEXCOORD") {
+
+          has_texcoord_array = true;
+          texcoord_offset = offset;
+
+          if (arr_sources.find(source) != arr_sources.end()) {
+            vector<float>& floats = arr_sources[source];
+            size_t num_floats = floats.size();
+            for (size_t i = 0; i < num_floats; i += 2) {
+              Vector2D n = Vector2D(floats[i], floats[i+1]);
+              polymesh.texcoords.push_back(n);
+            }
+          } else {
+            stat("Error: undefined source for TEXCOORD semantic: " << source);
+            exit(EXIT_FAILURE);
+          }
+        }
+
+        e_input = e_input->NextSiblingElement("input");
+      }
+
+      // polygon info
+      size_t num_polygons = e_polylist->IntAttribute("count");
+      size_t stride = ( has_vertex_array   ? 1 : 0 ) +
+                      ( has_normal_array   ? 1 : 0 ) +
+                      ( has_texcoord_array ? 1 : 0 ) ;
+
+      // create polygon size array and compute size of index array
+      vector<size_t> sizes; size_t num_indices = 0;
+      XMLElement* e_vcount = e_polylist->FirstChildElement("vcount");
+      if (e_vcount) {
+
+        size_t size;
+        string s = e_vcount->GetText();
+        stringstream ss (s);
+
+        for (size_t i = 0; i < num_polygons; ++i) {
+          ss >> size;
+          sizes.push_back(size);
+          num_indices += size * stride;
+        }
+
+      } else {
+        // this is a triangle, silly
+        for (size_t i = 0; i < num_polygons; ++i) {
+          sizes.push_back(3);
+          num_indices += 3 * stride;
+        }
+      }
+
+      // index array
+      vector<size_t> indices;
+      XMLElement* e_p = e_polylist->FirstChildElement("p");
+      if (e_p) {
+
+        size_t index;
+        string s = e_p->GetText();
+        stringstream ss (s);
+
+        for (size_t i = 0; i < num_indices; ++i) {
+          ss >> index;
+          indices.push_back(index);
+        }
+
+      } else {
+        stat("Error: no index array defined in geometry: " << polymesh.id);
+        exit(EXIT_FAILURE);
+      }
+
+      // create polygons
+      polymesh.polygons.resize(num_polygons);
+
+      // vertex array indices
+      if (has_vertex_array) {
+        size_t k = 0;
+        for (size_t i = 0; i < num_polygons; ++i) {
+          for (size_t j = 0; j < sizes[i]; ++j) {
+            polymesh.polygons[i].vertex_indices.push_back(
+              indices[k * stride + vertex_offset]
+            );
+            k++;
+          }
+        }
+      }
+
+      // normal array indices
+      if (has_normal_array) {
+        size_t k = 0;
+        for (size_t i = 0; i < num_polygons; ++i) {
+          for (size_t j = 0; j < sizes[i]; ++j) {
+            polymesh.polygons[i].normal_indices.push_back(
+              indices[k * stride + normal_offset]
+            );
+            k++;
+          }
+        }
+      }
+
+      // texcoord array indices
+      if (has_normal_array) {
+        size_t k = 0;
+        for (size_t i = 0; i < num_polygons; ++i) {
+          for (size_t j = 0; j < sizes[i]; ++j) {
+            polymesh.polygons[i].texcoord_indices.push_back(
+              indices[k * stride + texcoord_offset]
+            );
+            k++;
+          }
+        }
+      }
+    }
   }
 
   // print summary
@@ -876,7 +1073,8 @@ void ColladaParser::parse_material ( XMLElement* xml, MaterialInfo& material ) {
         if (type == "emission") {
           XMLElement *e_radiance  = get_element(e_bsdf, "radiance");
           Vector3D radiance = spectrum_from_string(string(e_radiance->GetText()));
-          BSDF* bsdf = new EmissionBSDF(radiance);
+          // FIXME: staff sol uses new EmissionBSDF(radiance, Vector3D(0));, whereas student code omits Vector3D(0)
+          BSDF* bsdf = new EmissionBSDF(radiance); // FIXME: Should not add emissive materials. Use light sources directly.
           material.bsdf = bsdf;
         } else if (type == "mirror") {
           XMLElement *e_reflectance  = get_element(e_bsdf, "reflectance");
@@ -918,10 +1116,15 @@ void ColladaParser::parse_material ( XMLElement* xml, MaterialInfo& material ) {
       }
     } else if (tech_common) {
       XMLElement* e_diffuse = get_element(tech_common, "phong/diffuse/color");
+      XMLElement* e_lambert_diffuse = get_element(tech_common, "lambert/diffuse/color");
       if (e_diffuse) {
         Vector3D reflectance = spectrum_from_string(string(e_diffuse->GetText()));
         material.bsdf = new DiffuseBSDF(reflectance);
-      } else {
+      } else if (e_lambert_diffuse) {
+        Vector3D reflectance = spectrum_from_string(string(e_lambert_diffuse->GetText()));
+        material.bsdf = new DiffuseBSDF(reflectance);
+      }
+      else {
         material.bsdf = new DiffuseBSDF(Vector3D(.5f,.5f,.5f));
       }
     } else {
