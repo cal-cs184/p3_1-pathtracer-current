@@ -13,6 +13,7 @@ option(CGL_BUILD_SHARED   "Build shared libraries"   OFF)
 option(CGL_BUILD_DOCS     "Build documentation"      OFF)
 option(CGL_BUILD_TESTS    "Build tests programs"     OFF)
 option(CGL_BUILD_EXAMPLES "Build examples"           OFF)
+set(GLFW_BUILD_WAYLAND OFF)
 
 if(BUILD_DEBUG)
     set(CGL_BUILD_DEBUG ON)
