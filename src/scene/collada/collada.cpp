@@ -12,7 +12,7 @@
 
 #include "pathtracer/bsdf.h"
 
-#define stat(s) // cerr << "[COLLADA Parser] " << s << endl;
+#define stat(s) cerr << "[COLLADA Parser] " << s << endl;
 
 using namespace std;
 
@@ -508,14 +508,16 @@ void ColladaParser::parse_light( XMLElement* xml, LightInfo& light ) {
   XMLElement* technique_common = get_technique_common(xml);
   XMLElement* technique_CGL = get_technique_CGL(xml);
   XMLElement* technique_blender = get_technique_blender(xml);
+
+  // use blender profile as last resort
+  if (technique_blender) {
+    technique = technique_blender;
+  }
   if (technique_common) {
     technique = technique_common;
   }
   if (technique_CGL) {
     technique = technique_CGL;
-  }
-  if (technique_blender) {
-    technique = technique_blender;
   }
 
   if (!technique) {
@@ -535,7 +537,6 @@ void ColladaParser::parse_light( XMLElement* xml, LightInfo& light ) {
     XMLElement* e_color = get_element(e_light, "color");
 
     XMLElement* e_energy = get_element(e_light, "energy");
-    e_energy = e_energy ? e_energy : get_element(e_light, "blender_energy");
     XMLElement* e_red = get_element(e_light, "red");
     XMLElement* e_green = get_element(e_light, "green");
     XMLElement* e_blue = get_element(e_light, "blue");
@@ -573,7 +574,7 @@ void ColladaParser::parse_light( XMLElement* xml, LightInfo& light ) {
         light.linear_att = atof(e_linear_att->GetText());
         light.quadratic_att = atof(e_quadratic_att->GetText());
       } else {
-        stat("Error: No attenuation definitions in point light: " << light.id);
+        stat("Error: No attenuation, linear, quadratic definitions in point light: " << light.id);
         exit(EXIT_FAILURE);
       }
     } else if (type == "spot") {
@@ -591,7 +592,7 @@ void ColladaParser::parse_light( XMLElement* xml, LightInfo& light ) {
         light.linear_att = atof(e_linear_att->GetText());
         light.quadratic_att = atof(e_quadratic_att->GetText());
       } else {
-        stat("Error: Missing definitions in spot light: " << light.id);
+        stat("Error: Missing falloff, constant, linear, quadratic definitions in spot light: " << light.id);
         exit(EXIT_FAILURE);
       }
     } else {
